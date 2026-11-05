@@ -2581,7 +2581,7 @@ function mountTelegram(w,root,tabs){
   const tabsHtml=()=>'<div class="dv-tabs ctabs" role="tablist">'+TABS.map(t=>'<button type="button" role="tab" aria-selected="'+(t[0]===tab)+'" class="'+(t[0]===tab?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
   root.innerHTML='<div class="nw">'+hd('telegram','Telegram',(tabs||'')+'<button class="ibtn" type="button" id="tgr" aria-label="Yenile">'+I.refresh+'</button>')+'<div class="tg-sub" id="tgt"></div><div class="nw-list noscroll" id="tgl"></div><div class="foot" id="tgf"></div></div>';
   const list=$('#tgl',root),foot=$('#tgf',root),btn=$('#tgr',root),tt=$('#tgt',root);
-  let seq=0,lastAt=0,busy=false,why='';   /* busy: bir çekim sürerken true */
+  let seq=0,lastAt=0,lastLive=0,busy=false,why='';   /* busy: bir çekim sürerken true */
   const skel=()=>{list.innerHTML='<div class="skel"></div><div class="skel" style="width:80%"></div><div class="skel"></div><div class="skel" style="width:70%"></div>'};
   const view=()=>mergeSD(TG_CH.filter(c=>tab==='all'||c.cat===tab).map(c=>data[c.k]||[]));
   /* Alt satır: verinin en son ne zaman çekildiği, en yeni mesajın ne kadar önce atıldığı ve alınamayan kanal sayısı. */
@@ -2616,10 +2616,15 @@ function mountTelegram(w,root,tabs){
       mkTabs();if(!TABS.find(t=>t[0]===tab))tab=TABS[0][0];tt.innerHTML=tabsHtml();
       if(!show())skel();
     }
-    const fresh=feed&&force!==true&&Date.now()-feed.t<15*60e3;   /* akış 15 dk'dan eskiyse (GitHub zamanlayıcısı gecikebilir) ya da elle yenilemede canlı çekim denenir; olmazsa akıştaki veri kullanılır */
+    /* Hazır akış (tg.json) her dakika kontrol edilir; ucuz bir dosyadır. Canlı çekim (jina/proxy) yalnızca elle yenilemede ya da akış alınamıyor/15 dk'dan eskiyse ve son denemeden 5 dk geçmişse yapılır. */
+    const stale=!feed||Date.now()-feed.t>=15*60e3;
+    const live=force===true||(stale&&Date.now()-lastLive>=5*60e3);
+    if(!live&&!feed){busy=false;btn.firstElementChild.classList.remove('spin');return}   /* akış alınamadı, canlı çekim için erken: eldeki veriyle kal */
+    if(live)lastLive=Date.now();
+    const fresh=!live;
     const pull=async c=>{
       const f=feed&&feed.map[c.k];
-      if(f&&f.length&&fresh)return{items:f,t:feed.t};
+      if(fresh){if(f&&f.length)return{items:f,t:feed.t};throw new Error('akışta yok')}
       try{return{items:await tgFetchRetry(c),t:Date.now()}}
       catch(e){if(f&&f.length)return{items:f,t:feed.t};throw e}
     };
@@ -2644,7 +2649,7 @@ function mountTelegram(w,root,tabs){
   });
   btn.addEventListener('click',()=>load(true));
   every(w,()=>{if(!root.hidden&&list.querySelector('.nw-i'))paintFoot()},30e3);   /* "x dk önce" ve "eski" bilgisi kendiliğinden güncellensin */
-  load();every(w,()=>{if(!root.hidden)load()},300e3);   /* 5 dk: servis önbelleği zaten 2-5 dk, daha sık sormak yeni veri getirmez ve engellenme riskini artırır */onBus(w,'refresh',()=>{if(!root.hidden)load()});
+  load();every(w,()=>{if(!root.hidden)load()},60e3);   /* 1 dk: yalnızca hazır akış dosyası okunur (ucuz); GitHub 5 dk'da bir güncellediği için yeni veri en geç ~1 dk içinde görünür */onBus(w,'refresh',()=>{if(!root.hidden)load()});
   return{off(){},on(){if(Date.now()-lastAt>60e3)load()}};
 }
 
