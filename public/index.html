@@ -2340,13 +2340,13 @@ function startNewsTicker(){
 /* ---------- Telegram kanalları (herkese açık t.me/s/ önizlemesi) ---------- */
 /* Kategoriler sekme olur (TG_CATS sırasıyla). Yeni kanal: TG_CH'ye bir satır ekle ve cat'e kategori anahtarını yaz.
    Yeni kategori: TG_CATS'e bir satır ekle; kanalı olmayan kategori sekmesi görünmez. */
-const TG_CATS=[['haber','Haber'],['kripto','Kripto'],['alisveris','Alışveriş']];
+const TG_CATS=[['haber','Haber'],['alisveris','Alışveriş']];
 /* Bu kategorilerde mesajın içindeki ilk dış bağlantı varsa tıklama doğrudan ona gider (yoksa Telegram gönderisine). */
 const TG_DIRECT=['alisveris'];
 const TG_CH=[
   {k:'bosuna',u:'bosuna_tiklamayin_haber',name:'Boşuna Tıklamayın',cat:'haber'},
   {k:'sdk',u:'sondakika_haberr0',name:'Son Dakika',cat:'haber'},
-  {k:'ninja',u:'ninjanewstr',name:'Ninja News',cat:'kripto'},
+  {k:'ninja',u:'ninjanewstr',name:'Ninja News',cat:'haber'},
   {k:'firsat',u:'firsattayfa',name:'Fırsat Tayfa',cat:'alisveris'}
 ];
 /* r.jina.ai: t.me sayfasını HTML olarak döndüren, CORS izni olan okuyucu. Genel proxy'ler çoğu ağda zaman aşımına uğradığı için ilk bu denenir. */
