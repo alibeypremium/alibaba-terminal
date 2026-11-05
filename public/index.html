@@ -2731,7 +2731,8 @@ function mountRadio(w,root){
   /* Yalnızca bu kanallar: re = dizindeki istasyon adıyla eşleşme, q = aranan kelimeler */
   const CH=[
     {k:'ht',name:'Habertürk',q:['habertürk','haberturk'],re:/habert[uü]rk/i,c:'#d71920'},
-    {k:'ntv',name:'NTV',q:['ntv radyo','ntvradyo','ntv'],re:/ntv\s*[-.]?\s*radyo|radyo\s*ntv/i,not:/spor|tv$/i,c:'#2f7fd1'},
+    /* NTV Radyo: dizindeki kayıtlar yalnızca http (https sayfada açılmaz), biri de .pls. Resmî https HLS yayını sabit verildi. */
+    {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',fix:'https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8'},
     {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a'}
   ];
   const norm=s=>({id:s.stationuuid,name:(s.name||'').trim().replace(/\s+/g,' '),url:s.url_resolved||s.url,alt:s.url,fav:s.favicon||'',br:s.bitrate||0,clk:s.clickcount||0});
@@ -2740,13 +2741,17 @@ function mountRadio(w,root){
   const search=async q=>{const p='/json/stations/search?name='+encodeURIComponent(q)+'&countrycode=TR&hidebroken=true&order=clickcount&reverse=true&limit=60';const j=await Promise.any(MIRRORS.map(m=>getJSON(m+p,8000)));return j.filter(s=>s.hls!==1).map(norm).filter(good)};
   let st0=LS.get('pano.radio.ch3',null);   /* {t, m:{k:{id,name,url,fav,br}}} */
   let map=st0&&Date.now()-st0.t<12*3600e3?st0.m:{},cur=null,state='idle',vol=+LS.get('pano.radio.vol',.7);if(!(vol>=0&&vol<=1))vol=.7;
+  const fixed=c=>({id:'fix-'+c.k,name:c.name+' Radyo',url:c.fix,urls:[c.fix],fav:'',br:0});
+  CH.forEach(c=>{if(c.fix)map[c.k]=fixed(c)});   /* sabit yayınlar önbellekteki eski kayıtların üstüne yazılır */
   const lastK=LS.get('pano.radio.last','');cur=CH.find(c=>c.k===lastK)||null;
   const audio=new Audio();audio.preload='none';audio.volume=vol;
   root.innerHTML='<div class="rd"><div class="rd-now"><div class="rd-inf"><b class="rd-nm">Bir kanal seç</b><span class="rd-sl"><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rd-st">Hazır</span></span></div>'+
     '<button class="rd-sk rd-pv" type="button" aria-label="Önceki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button><button class="rd-pl" type="button" aria-label="Çal / durdur"></button><button class="rd-sk rd-nx" type="button" aria-label="Sonraki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button></div>'+
     '<div class="rd-ctl"><div class="rd-list noscroll"></div>'+
     '<div class="rd-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"></div>'+'</div></div>';
-  w._dispose=()=>{try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
+  let hls=null,gen=0;
+  const killHls=()=>{gen++;if(hls){try{hls.destroy()}catch{}hls=null}};
+  w._dispose=()=>{killHls();try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
   const $r=s=>$(s,root),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
   rng.value=Math.round(vol*100);
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
@@ -2774,7 +2779,23 @@ function mountRadio(w,root){
   let tryIdx=0;
   function start(s){
     const list=s.urls&&s.urls.length?s.urls:[s.url];
-    audio.src=list[tryIdx];audio.volume=vol;
+    const u=list[tryIdx];
+    killHls();audio.volume=vol;
+    /* HLS (.m3u8): hls.js destekleniyorsa o çalar (canPlayType Chrome'da "maybe" deyip yine de açmıyor);
+       MSE olmayan iPhone Safari'de yerel HLS kullanılır. */
+    if(/\.m3u8(\?|$)/i.test(u)){
+      const my=gen;
+      loadHls().then(H=>{
+        if(my!==gen)return;   /* bu arada durduruldu ya da başka kanal seçildi */
+        if(H&&H.isSupported()){
+          hls=new H({maxBufferLength:20});hls.loadSource(u);hls.attachMedia(audio);
+          hls.on(H.Events.MANIFEST_PARSED,()=>{audio.play().catch(()=>fail())});
+          hls.on(H.Events.ERROR,(_,d)=>{if(d.fatal)fail()});
+        }else{audio.src=u;audio.play().catch(()=>fail())}
+      }).catch(()=>{if(my===gen)fail()});
+      return;
+    }
+    audio.src=u;
     audio.play().catch(()=>fail());
   }
   function fail(){
@@ -2789,7 +2810,7 @@ function mountRadio(w,root){
   audio.addEventListener('pause',()=>{if(state==='play'||state==='load'){state='idle';paintNow()}});
   pl.addEventListener('click',()=>{
     if(!cur){play(CH[0]);return}
-    if(state==='play'||state==='load'){audio.pause();state='idle';paintNow()}else play(cur);
+    if(state==='play'||state==='load'){killHls();audio.pause();state='idle';paintNow()}else play(cur);
   });
   const step=d=>{const i=cur?CH.findIndex(c=>c.k===cur.k):-1;play(CH[(i+d+CH.length)%CH.length])};
   $r('.rd-pv').addEventListener('click',()=>step(-1));$r('.rd-nx').addEventListener('click',()=>step(1));
@@ -2800,6 +2821,7 @@ function mountRadio(w,root){
     await Promise.allSettled(qs.map(async q=>{try{pool[q]=await search(q)}catch{pool[q]=[]}}));
     const m={};
     CH.forEach(c=>{
+      if(c.fix){m[c.k]=fixed(c);return}
       const cand=[];c.q.forEach(q=>(pool[q]||[]).forEach(s=>{if(!cand.find(x=>x.id===s.id))cand.push(s)}));
       const hits=cand.filter(s=>c.re.test(s.name)&&!(c.not&&c.not.test(s.name))).sort((a,b)=>b.clk-a.clk).slice(0,4);
       if(hits.length){
