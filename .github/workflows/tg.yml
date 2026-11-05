@@ -1,0 +1,29 @@
+name: tg
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tg
+  cancel-in-progress: true
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save --no-package-lock cheerio@1.0.0
+      - run: node .github/scripts/tg.mjs out/tg.json
+      - name: veri dalına yaz (site yeniden build olmaz)
+        run: |
+          cd out
+          git init -q -b veri
+          git config user.name "tg-bot"
+          git config user.email "tg-bot@users.noreply.github.com"
+          git add tg.json
+          git commit -q -m "tg $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" veri
