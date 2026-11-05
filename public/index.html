@@ -2230,7 +2230,6 @@ function mountTechNews(w,root){
   const tabsHtml=()=>'<div class="dv-tabs" role="tablist">'+TECH_TABS.map(t=>'<button type="button" role="tab" aria-selected="'+(t[0]===tab)+'" class="'+(t[0]===tab?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
   root.innerHTML='<div class="nw">'+hd('tech','Haberler','<span id="tt" style="display:contents"></span><button class="ibtn" type="button" id="nr" aria-label="Yenile">'+I.refresh+'</button>')+'<div class="nw-list noscroll" id="nl"></div><div class="foot" id="nf"></div></div>';
   const list=$('#nl',root),foot=$('#nf',root),btn=$('#nr',root),tt=$('#tt',root);
-  let seq=0;
   const skel=()=>{list.innerHTML='<div class="skel"></div><div class="skel" style="width:80%"></div><div class="skel"></div><div class="skel" style="width:70%"></div>'};
   const srcNames=()=>TECH_TABS.find(t=>t[0]===tab)[2].map(k=>TECH_FEEDS[k].name).join(', ');
   const show=items=>{
@@ -2238,23 +2237,51 @@ function mountTechNews(w,root){
     foot.textContent=items.stale?'eski veri · '+hms(items.stale):srcNames()+' · '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   };
   const fail=()=>{list.innerHTML='<div class="nw-msg"><div>Haberler şu an alınamadı.</div><button type="button" id="nrt">Tekrar dene</button></div>';foot.textContent='';$('#nrt',list).onclick=()=>load(true)};
+  /* Sekme başına kalıcı havuz: yeni çekim eski listeyle birleşir (başlığa göre tekilleşir). Gecikmeli/önbellekli bir kaynak
+     ya da eksik gelen bir yenileme, daha önce görülen haberi listeden düşüremez; sekme değişince liste boşalıp dolmaz. */
+  const nk=x=>x.title.toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]/g,'').slice(0,70);
+  const pools={},at={};   /* at: sekmenin son başarılı çekim zamanı */
+  const absorb=(m,list)=>{
+    const now=Date.now();
+    (list||[]).forEach(x=>{
+      if(!x||!x.title||!safeUrl(x.link))return;
+      let t=Date.parse(x.date);if(!(t>0))t=now;t=Math.min(t,now);
+      const k=nk(x),e=m.get(k);
+      if(e){if(t<e._t)e._t=t}else m.set(k,{title:x.title,link:x.link,source:x.source,_t:t});
+    });
+  };
+  const poolOf=t=>{
+    if(pools[t])return pools[t];
+    const m=pools[t]=new Map(),c=LS.get('pano.tech.c.'+t,null);
+    if(c&&Array.isArray(c.items)){absorb(m,c.items);at[t]=0;m._c=c.t||0}
+    return m;
+  };
+  const view=t=>{
+    const m=poolOf(t);
+    const arr=[...m.values()].sort((a,b)=>b._t-a._t).map(x=>({...x,date:new Date(x._t).toISOString()}));
+    const it=mergeSD([arr]);
+    const keep=new Set(arr.slice(0,80).map(x=>nk(x)));for(const k of [...m.keys()])if(!keep.has(k))m.delete(k);   /* havuz büyümesin */
+    return it;
+  };
+  let busyN=0;
   async function load(force){
-    const my=++seq,t0=tab;
+    const t0=tab,m=poolOf(t0);busyN++;
     btn.firstElementChild.classList.add('spin');
     if(force===true)TECH_TABS.find(t=>t[0]===t0)[2].forEach(k=>delete feedCache[k]);
-    skel();
+    if(m.size){const it=view(t0);if(!at[t0])it.stale=m._c;show(it)}else skel();   /* eldeki liste hemen görünür, iskelet yalnızca hiç veri yoksa */
     try{
       const items=await techItems(t0);
-      if(my!==seq)return;
-      LS.set('pano.tech.c.'+t0,{t:Date.now(),items});
-      show(items);status('kn',true);
+      absorb(m,items);at[t0]=Date.now();
+      const it=view(t0);
+      LS.set('pano.tech.c.'+t0,{t:at[t0],items:it.map(x=>({title:x.title,link:x.link,source:x.source,date:x.date}))});
+      if(tab===t0)show(it);
+      status('kn',true);
     }catch{
-      if(my!==seq)return;
-      const c=LS.get('pano.tech.c.'+t0,null);
-      if(c&&Array.isArray(c.items)&&c.items.length){const it=c.items.slice();it.stale=c.t;show(it)}else fail();
+      if(tab===t0){if(m.size){const it=view(t0);it.stale=at[t0]||m._c;show(it)}else fail()}
       status('kn',false);
+    }finally{
+      if(--busyN<=0)btn.firstElementChild.classList.remove('spin');
     }
-    btn.firstElementChild.classList.remove('spin');
   }
   tt.innerHTML=tabsHtml();
   /* Her 60 saniyede teknoloji → oyun → otomobil → teknoloji. Elle seçimde süre yeniden başlar. */
@@ -2339,7 +2366,6 @@ async function tgFetch(c){
   const u='https://t.me/s/'+c.u,ok=x=>{if(!/data-post="[^"]+\/\d+"/.test(x))throw new Error('tg');return x};   /* gerçekten mesaj içeren sayfa değilse kabul etme */
   const lab=(name,p)=>p.catch(e=>{throw new Error(name+': '+tgWhy(e))});   /* hata sebebi ekranda görünsün */
   const routes=[lab('jina',jinaHtml(u).then(ok)),lab('proxy',viaProxy(u,ok))];
-  if(/^https?:$/.test(location.protocol))routes.push(lab('api',getText('/api/tg?c='+encodeURIComponent(c.u),12000).then(ok)));
   let t;
   try{t=await Promise.any(routes)}
   catch(e){const err=new Error('tg');err.detail=(e.errors||[e]).map(x=>String(x&&x.message||x)).join(' · ');throw err}
