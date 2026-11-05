@@ -2559,18 +2559,32 @@ function tgUnion(old,nw){
   const id=x=>+(String(x.link).match(/\/(\d+)$/)||[0,0])[1];
   return[...m.values()].sort((a,b)=>id(b)-id(a)).slice(0,40);
 }
-/* GitHub Actions'ın 10 dakikada bir hazırladığı hazır akış (kanal listesi dahil). Ulaşılamazsa canlı çekime (jina/proxy) düşülür. */
+/* GitHub Actions'ın 5 dakikada bir hazırladığı hazır akış (kanal listesi dahil). Ulaşılamazsa canlı çekime (jina/proxy) düşülür.
+   İki adres aynı anda okunur, daha yeni olan kullanılır: raw.githubusercontent.com bazen 5-8 dk eski kopya verir, GitHub API ise git deposundan okuduğu için günceldir
+   (API anahtarsız saatte 60 istek sınırlıdır; tarayıcı önbelleği ve ETag sayesinde bu kullanım sınırı aşmaz, sınır dolarsa raw adresi devam eder). */
 const TG_FEED='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/veri/tg.json';
+const TG_API='https://api.github.com/repos/alibeypremium/alibaba-terminal/contents/tg.json?ref=veri';
 async function tgFeed(){
-  const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
+  const one=async(url,opt)=>{
+    const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
+    try{
+      const r=await fetch(url,{signal:c.signal,...opt});
+      if(!r.ok)throw new Error(r.status);
+      const j=await r.json();
+      if(!j||!Array.isArray(j.ch)||!j.t)throw new Error('feed');
+      return j;
+    }finally{clearTimeout(to)}
+  };
   try{
-    const r=await fetch(TG_FEED+'?m='+Math.floor(Date.now()/60000),{signal:c.signal,cache:'no-store'});
-    if(!r.ok)throw new Error(r.status);
-    const j=await r.json();
-    if(!j||!Array.isArray(j.ch)||!j.t)throw new Error('feed');
+    const got=(await Promise.allSettled([
+      one(TG_API,{headers:{Accept:'application/vnd.github.raw+json'}}),
+      one(TG_FEED+'?m='+Math.floor(Date.now()/60000),{cache:'no-store'})
+    ])).filter(x=>x.status==='fulfilled').map(x=>x.value);
+    if(!got.length)return null;
+    const j=got.reduce((a,b)=>+b.t>+a.t?b:a);
     const map={};j.ch.forEach(x=>{if(x&&x.k&&Array.isArray(x.items))map[x.k]=x.items});
     return{t:+j.t,cfg:j.cfg,map};
-  }catch{return null}finally{clearTimeout(to)}
+  }catch{return null}
 }
 /* Geçici hatada (jina/proxy ara sıra boş ya da hatalı döner) bir kez daha dener. */
 async function tgFetchRetry(c){try{return await tgFetch(c)}catch{await new Promise(r=>setTimeout(r,1500));return tgFetch(c)}}
