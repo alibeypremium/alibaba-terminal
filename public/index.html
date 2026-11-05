@@ -2442,7 +2442,7 @@ function mountTelegram(w,root,tabs){
   const fail=()=>{list.innerHTML='<div class="nw-msg"><div>Bu sekmede şu an mesaj yok ya da alınamadı.<br><span style="font-size:11px;opacity:.7">Kanal herkese açık olmayabilir ya da servis yanıt vermedi.</span>'+'<br><span style="font-size:10.5px;opacity:.75;word-break:break-word">Ayrıntı: '+esc(why||'(hata kaydı yok)')+' · sürüm tg-0511g</span></div><button type="button" id="tgrt">Tekrar dene</button></div>';foot.textContent='';$('#tgrt',list).onclick=()=>load(true)};
   /* Seçili sekmede gösterilecek mesaj yoksa: çekim sürüyorsa iskelet, bittiyse mesaj + "Tekrar dene" (iskelet sonsuza kadar kalmasın). */
   const empty=()=>{if(busy)skel();else fail()};
-  async function load(){
+  async function load(force){
     lastAt=Date.now();busy=true;const my=++seq;let ok=0;
     btn.firstElementChild.classList.add('spin');
     if(!show())skel();
@@ -2456,7 +2456,7 @@ function mountTelegram(w,root,tabs){
       mkTabs();if(!TABS.find(t=>t[0]===tab))tab=TABS[0][0];tt.innerHTML=tabsHtml();
       if(!show())skel();
     }
-    const fresh=feed&&Date.now()-feed.t<45*60e3;   /* akış 45 dk'dan eskiyse canlı çekim denenir */
+    const fresh=feed&&force!==true&&Date.now()-feed.t<15*60e3;   /* akış 15 dk'dan eskiyse (GitHub zamanlayıcısı gecikebilir) ya da elle yenilemede canlı çekim denenir; olmazsa akıştaki veri kullanılır */
     const pull=async c=>{
       const f=feed&&feed.map[c.k];
       if(f&&f.length&&fresh)return{items:f,t:feed.t};
@@ -2482,7 +2482,7 @@ function mountTelegram(w,root,tabs){
     tab=b.dataset.t;LS.set('pano.tg.tab',tab);tt.innerHTML=tabsHtml();
     if(!show())empty();
   });
-  btn.addEventListener('click',()=>load());
+  btn.addEventListener('click',()=>load(true));
   every(w,()=>{if(!root.hidden&&list.querySelector('.nw-i'))paintFoot()},30e3);   /* "x dk önce" ve "eski" bilgisi kendiliğinden güncellensin */
   load();every(w,()=>{if(!root.hidden)load()},300e3);   /* 5 dk: servis önbelleği zaten 2-5 dk, daha sık sormak yeni veri getirmez ve engellenme riskini artırır */onBus(w,'refresh',()=>{if(!root.hidden)load()});
   return{off(){},on(){if(Date.now()-lastAt>60e3)load()}};
