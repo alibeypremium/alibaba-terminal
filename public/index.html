@@ -2494,7 +2494,7 @@ function mountTelegram(w,root,tabs){
 /* ---------- Son Dakika + Telegram (tek widget, iki sekme; her sekme kendi temasını korur) ---------- */
 function mountHaber(w,root){
   const TABS=[['sd','Son Dakika'],['tg','Telegram']];
-  let tab=LS.get('pano.haber.tab','sd');if(!TABS.find(t=>t[0]===tab))tab='sd';
+  let tab='tg';   /* sayfa her açıldığında Telegram sekmesi açık gelir; Son Dakika'ya geçmek için sekmeye tıklanır */
   const tabsHtml=()=>'<div class="dv-tabs wtabs" role="tablist">'+TABS.map(t=>'<button type="button" role="tab" aria-selected="'+(t[0]===tab)+'" class="'+(t[0]===tab?'on':'')+'" data-m="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
   root.innerHTML='<div class="mp" data-p="sd"></div><div class="mp" data-p="tg" hidden></div>';
   const pane={sd:$('[data-p=sd]',root),tg:$('[data-p=tg]',root)},api={};
