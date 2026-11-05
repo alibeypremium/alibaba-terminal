@@ -2428,7 +2428,7 @@ function mountTelegram(w,root,tabs){
   const paintFoot=()=>{
     const chs=TG_CH.filter(c=>tab==='all'||c.cat===tab);
     const last=Math.max(0,...chs.map(c=>ts[c.k]||(data[c.k]?legacy:0)));
-    let t=last?'Son Akış '+hms(last)+(Date.now()-last>12*60e3?' (eski)':''):'Henüz çekilmedi';
+    let t=last?'Son Akış '+hms(last)+(Date.now()-last>25*60e3?' (eski)':''):'Henüz çekilmedi';
     const nb=chs.filter(c=>bad.includes(c.k)).length;if(nb)t+=' · '+nb+' kanal alınamadı';
     foot.textContent=t;
   };
