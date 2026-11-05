@@ -3,12 +3,12 @@ import * as cheerio from 'cheerio';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CATS = [['haber', 'Haber'], ['kripto', 'Kripto'], ['alisveris', 'Alışveriş']];
+const CATS = [['haber', 'Haber'], ['alisveris', 'Alışveriş']];
 const DIRECT = ['alisveris'];   // bu kategorilerde tıklama mesajdaki ilk dış bağlantıya gider
 const CHANNELS = [
   { k: 'bosuna', u: 'bosuna_tiklamayin_haber', name: 'Boşuna Tıklamayın', cat: 'haber' },
   { k: 'sdk',    u: 'sondakika_haberr0',       name: 'Son Dakika',        cat: 'haber' },
-  { k: 'ninja',  u: 'ninjanewstr',             name: 'Ninja News',        cat: 'kripto' },
+  { k: 'ninja',  u: 'ninjanewstr',             name: 'Ninja News',        cat: 'haber' },
   { k: 'firsat', u: 'firsattayfa',             name: 'Fırsat Tayfa',      cat: 'alisveris' },
 ];
 
