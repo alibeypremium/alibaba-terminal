@@ -307,6 +307,25 @@ body.is-dragging .w{backdrop-filter:none;-webkit-backdrop-filter:none}
 .rd-eq i{flex:1;height:30%;border-radius:1px;background:var(--acc);animation:rdeq .8s ease-in-out infinite alternate}
 .rd-eq i:nth-child(2){animation-duration:.55s;animation-delay:-.2s}.rd-eq i:nth-child(3){animation-duration:.95s;animation-delay:-.4s}
 @keyframes rdeq{0%{height:20%}100%{height:100%}}
+/* Radyo: kanal logoları, dönen plak, canlı rozeti */
+.rd-lg{position:relative;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;flex:none;overflow:hidden;background:var(--c,#fff);color:#fff;font-weight:800;font-size:11px;line-height:1;box-shadow:0 0 0 1.5px rgba(255,255,255,.55)}
+.rd-lg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+.rd-it.on .rd-lg{box-shadow:0 0 0 1.5px rgba(107,29,42,.45)}
+.rd-disc{position:relative;width:46px;height:46px;flex:none;border-radius:50%;display:grid;place-items:center;background:repeating-radial-gradient(circle at 50% 50%,#1b1014 0 2px,#2c1b22 2px 3px);box-shadow:0 4px 12px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.14);animation:rdspin 6s linear infinite;animation-play-state:paused}
+.rd-disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 20deg,transparent 0 20%,rgba(255,255,255,.18) 25%,transparent 32% 70%,rgba(255,255,255,.12) 75%,transparent 82%)}
+.rd.live .rd-disc{animation-play-state:running}
+.rd-disc .rd-lg{width:26px;height:26px;font-size:7.5px;letter-spacing:-.02em;box-shadow:0 0 0 1.5px rgba(0,0,0,.35)}
+.rd-disc .rd-lg0{background:#3a2229;font-size:13px;font-weight:400;color:rgba(255,255,255,.7)}
+.rd-badge{display:inline-flex;align-items:center;gap:5px;padding:1px 8px 1px 6px;border-radius:999px;background:#e5322d;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.08em;line-height:1.5}
+.rd-badge i{width:6px;height:6px;border-radius:50%;background:#fff;animation:rdlive 1.4s ease-in-out infinite}
+.rd-br{margin-left:6px;font-size:10.5px;opacity:.8}
+.rd-spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rdspin .8s linear infinite;margin-right:6px;vertical-align:-2px}
+@keyframes rdspin{to{transform:rotate(360deg)}}
+@keyframes rdlive{50%{opacity:.25}}
+html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
+@media (prefers-reduced-motion:reduce){.rd-disc,.rd-badge i,.rd-spin{animation:none}}
+@container (max-width:250px){.rd-disc{display:none}}
+@container (max-width:420px){.rd-br{display:none}}
 .rd-pl{appearance:none;border:0;width:38px;height:38px;border-radius:50%;background:var(--acc);color:#6b1d2a;cursor:pointer;display:grid;place-items:center;flex:none;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:transform .15s}
 .rd-pl:active{transform:scale(.94)}.rd-pl svg{width:19px;height:19px}
 .rd-sk{appearance:none;border:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.14);color:var(--t);cursor:pointer;display:grid;place-items:center;flex:none}
@@ -316,7 +335,7 @@ body.is-dragging .w{backdrop-filter:none;-webkit-backdrop-filter:none}
 .rd-vol input{flex:1;min-width:0;accent-color:var(--acc);height:16px}
 .rd-ctl{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;justify-content:center}
 .rd-list{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:none;min-width:0}
-.rd-it{appearance:none;border:0;background:rgba(0,0,0,.2);color:var(--t);font:inherit;display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;cursor:pointer;flex:none;white-space:nowrap}
+.rd-it{appearance:none;border:0;background:rgba(0,0,0,.2);color:var(--t);font:inherit;display:flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:999px;cursor:pointer;flex:none;white-space:nowrap}
 .rd-it.on{background:var(--acc);color:#6b1d2a}
 .rd-it.na{opacity:.55}
 .rd-dot{width:7px;height:7px;border-radius:50%;background:var(--c,#fff);flex:none;box-shadow:0 0 0 1.5px rgba(255,255,255,.55)}
@@ -324,9 +343,9 @@ body.is-dragging .w{backdrop-filter:none;-webkit-backdrop-filter:none}
 .rd-n{font-size:12.5px;font-weight:700}
 /* Alçak widget: kanallar ve ses çubuğu tek satırda */
 @container (max-height:150px){
-  .rd-ctl{flex-direction:row;align-items:center;gap:10px}
-  .rd-list{flex-wrap:nowrap}
-  .rd-it{padding:6px 11px}
+  .rd-ctl{flex-direction:row;align-items:center;gap:8px}
+  .rd-list{flex-wrap:nowrap;gap:4px}
+  .rd-it{padding:4px 10px 4px 5px;gap:6px}
   .rd-vol{flex:1;min-width:70px}
 }
 @container (max-width:300px){.rd-sk{display:none}}
@@ -735,7 +754,7 @@ button,.ibtn,.pill,.pc-k,.pc-pw,.tvp-c,.rd-it,.nt-tab,.tv-tab{touch-action:manip
   .nt-tab{padding:7px 13px}
   .tray button{padding:11px 16px}
   .w-minus{width:32px;height:32px}
-  .rd-it{padding:9px 16px}
+  .rd-it{padding:7px 16px 7px 8px}
   .pill{padding:11px 16px}
   .tvp-c{padding:8px 10px}
 }
@@ -3168,10 +3187,10 @@ function mountRadio(w,root){
   const secure=location.protocol==='https:';
   /* Yalnızca bu kanallar: re = dizindeki istasyon adıyla eşleşme, q = aranan kelimeler */
   const CH=[
-    {k:'ht',name:'Habertürk',q:['habertürk','haberturk'],re:/habert[uü]rk/i,c:'#d71920'},
+    {k:'ht',name:'Habertürk',q:['habertürk','haberturk'],re:/habert[uü]rk/i,c:'#d71920',logo:'https://yt3.ggpht.com/SqaSrx9HvlbnpXqfrsyqJOpL3uHHi3GQ3htT3gPdP3S8yebiy4iVPrZ4Ai1wQnNoHv7aUBLIeEE=s96-c-k-c0x00ffffff-no-rj'},
     /* NTV Radyo: dizindeki kayıtlar yalnızca http (https sayfada açılmaz), biri de .pls. Resmî https HLS yayını sabit verildi. */
-    {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',fix:'https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8'},
-    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a'}
+    {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',logo:'https://yt3.ggpht.com/wwJNZ3QBI5ojqIlQvsInUIwIuSQH-lhQaqv_-WR7gYvEqa6WNEfpdiTls8z30QIxQMFbTBUQ0Q=s96-c-k-c0x00ffffff-no-rj',fix:'https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8'},
+    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a',mono:'ODTÜ'}   /* resmî logo geniş bir yazı logosu, yuvarlak çerçeveye sığmaz: baş harf rozeti */
   ];
   const norm=s=>({id:s.stationuuid,name:(s.name||'').trim().replace(/\s+/g,' '),url:s.url_resolved||s.url,alt:s.url,fav:s.favicon||'',br:s.bitrate||0,clk:s.clickcount||0});
   const up=u=>secure?String(u).replace(/^http:/i,'https:'):u;
@@ -3183,24 +3202,28 @@ function mountRadio(w,root){
   CH.forEach(c=>{if(c.fix)map[c.k]=fixed(c)});   /* sabit yayınlar önbellekteki eski kayıtların üstüne yazılır */
   const lastK=LS.get('pano.radio.last','');cur=CH.find(c=>c.k===lastK)||null;
   const audio=new Audio();audio.preload='none';audio.volume=vol;
-  root.innerHTML='<div class="rd"><div class="rd-now"><div class="rd-inf"><b class="rd-nm">Bir kanal seç</b><span class="rd-sl"><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rd-st">Hazır</span></span></div>'+
+  root.innerHTML='<div class="rd"><div class="rd-now"><div class="rd-disc" aria-hidden="true"></div><div class="rd-inf"><b class="rd-nm">Bir kanal seç</b><span class="rd-sl"><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rd-st">Hazır</span></span></div>'+
     '<button class="rd-sk rd-pv" type="button" aria-label="Önceki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button><button class="rd-pl" type="button" aria-label="Çal / durdur"></button><button class="rd-sk rd-nx" type="button" aria-label="Sonraki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button></div>'+
     '<div class="rd-ctl"><div class="rd-list noscroll"></div>'+
     '<div class="rd-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"></div>'+'</div></div>';
   let hls=null,gen=0;
   const killHls=()=>{gen++;if(hls){try{hls.destroy()}catch{}hls=null}};
   w._dispose=()=>{killHls();try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
-  const $r=s=>$(s,root),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
+  const $r=s=>$(s,root),disc=$r('.rd-disc'),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
   rng.value=Math.round(vol*100);
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
-  const dot=c=>'<i class="rd-dot" style="--c:'+c.c+'"></i>';
+  /* Kanal rozeti: altta baş harf, üstte logo (logo yüklenmezse kaldırılır, baş harf kalır) */
+  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer">':'')+'</span>';
+  root.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.remove()},true);
   function paintList(){
-    lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it'+(cur&&cur.k===c.k?' on':'')+(map[c.k]?'':' na')+'" data-k="'+c.k+'" title="'+esc(c.name)+'">'+dot(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('')+'';
+    lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it'+(cur&&cur.k===c.k?' on':'')+(map[c.k]?'':' na')+'" data-k="'+c.k+'" title="'+esc(c.name)+'">'+lg(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('')+'';
   }
   function paintNow(){
     nm.textContent=cur?cur.name:'Bir kanal seç';
-    const T={idle:cur?'Çalmak için ▶':'Hazır',load:'Bağlanıyor…',play:'Çalıyor'+(cur&&map[cur.k]&&map[cur.k].br?' · '+map[cur.k].br+' kbps':''),err:'Bu yayın açılmadı',na:'Yayın adresi bulunamadı'};
-    stt.textContent=T[state];stt.className='rd-st '+(state==='err'||state==='na'?'err':'');
+    const br=cur&&map[cur.k]&&+map[cur.k].br;
+    const T={idle:cur?'Durdu':'Hazır',load:'<span class="rd-spin" aria-hidden="true"></span>Bağlanıyor…',play:'<span class="rd-badge"><i></i>CANLI</span>'+(br?'<span class="rd-br">'+br+' kbps</span>':''),err:'Bu yayın açılmadı',na:'Yayın adresi bulunamadı'};
+    stt.innerHTML=T[state];stt.className='rd-st '+(state==='err'||state==='na'?'err':'');
+    disc.innerHTML=cur?lg(cur,true):'<span class="rd-lg rd-lg0">♪</span>';
     pl.innerHTML=state==='play'||state==='load'?IC.pause:IC.play;
     box.classList.toggle('live',state==='play');
     root.querySelectorAll('.rd-it').forEach(b=>b.classList.toggle('on',!!cur&&b.dataset.k===cur.k));
