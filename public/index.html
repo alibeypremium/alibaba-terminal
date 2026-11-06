@@ -3213,7 +3213,7 @@ function mountRadio(w,root){
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
   /* Kanal rozeti: altta baş harf, üstte logo (logo yüklenmezse kaldırılır, baş harf kalır) */
   const dot=c=>'<i class="rd-dot" style="--c:'+c.c+'"></i>';   /* kanal düğmelerinde renkli nokta; logo yalnızca plakta */
-  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="object-fit:'+c.fit+'"':'')+'>':'')+'</span>';
+  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+(c.fit?';background:#fff':'')+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="object-fit:'+c.fit+';inset:14%;width:72%;height:72%;transform:translateX(7%)"':'')+'>':'')+'</span>';
   root.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.remove()},true);
   function paintList(){
     lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it'+(cur&&cur.k===c.k?' on':'')+(map[c.k]?'':' na')+'" data-k="'+c.k+'" title="'+esc(c.name)+'">'+dot(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('')+'';
