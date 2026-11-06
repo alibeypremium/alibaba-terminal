@@ -3113,7 +3113,7 @@ let tiltRaf=0,tiltEv=null;
 grid.addEventListener('pointermove',e=>{
   if(document.body.classList.contains('editing')||e.pointerType!=='mouse')return;
   const el=e.target.closest('.w');if(!el)return;
-  if(el.dataset.tab==='pc'){tiltEv=null;const s=el.style;s.setProperty('--rx','0deg');s.setProperty('--ry','0deg');s.setProperty('--glare',0);return}   /* Bilgisayar sekmesinde widget fareyle eğilmesin */
+  if(el.dataset.id==='youtube'&&(el.dataset.tab==='pc'||el.dataset.tab==='kk')){tiltEv=null;const s=el.style;s.setProperty('--rx','0deg');s.setProperty('--ry','0deg');s.setProperty('--glare',0);return}   /* Bilgisayar ve Kick sekmelerinde widget fareyle eğilmesin */
   tiltEv={el,cx:e.clientX,cy:e.clientY};
   if(tiltRaf)return;
   tiltRaf=requestAnimationFrame(()=>{
