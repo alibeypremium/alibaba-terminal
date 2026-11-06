@@ -251,7 +251,13 @@ body.is-dragging .w{backdrop-filter:none;-webkit-backdrop-filter:none}
 @container (min-width:520px){.pr-times{grid-template-columns:repeat(6,1fr)}}
 @container (max-width:230px){.pr-times{display:none}}
 @container (max-height:150px){.pr-times{display:none}}
-.pr-hj{font-size:11.5px;color:var(--t2);white-space:nowrap}
+.pr-hjw{display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:0;line-height:1.25;flex:none;max-width:calc(100% - 34px)}
+/* Yer daraldığında önce başlık küçülür; tarih ve dini gün satırı yerinde kalır (çok uzunsa "…" ile kısalır). Çok darsa başlık gizlenir. */
+.pr .ttl{flex:0 100 auto}
+@container (max-width:330px){.pr .ttl{display:none}}
+.pr-hj{font-size:11.5px;color:var(--t2);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pr-ev{font-size:11px;font-weight:650;color:var(--acc);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pr-ev:empty{display:none}
 /* Sıradaki vaktin saati: vakit ızgarası gizlendiğinde (dar ya da kısa widget) etiketin yanında görünür */
 .pr-at{display:none;color:var(--acc);font-weight:650;font-variant-numeric:tabular-nums}
 @container (max-width:230px){.pr-at{display:inline}}
@@ -942,8 +948,49 @@ function secsIn(tz){
   const p=Object.fromEntries(f.formatToParts(new Date()).map(x=>[x.type,x.value]));
   return(+p.hour%24)*3600+(+p.minute)*60+(+p.second);
 }
+/* ---------- Dini günler (hicri tarihten hesaplanır, tarih tablosu tutulmaz) ---------- */
+/* Hicri tarih tarayıcının Umm el-Kura takviminden gelir; Diyanet'in yayımladığı listelerle gün gün karşılaştırıldı (2026-27 kandiller, Ramazan, bayramlar, 2027 Mevlid, Hicri Yılbaşı, Aşure).
+   Kandiller bir önceki akşam başlar: Diyanet listesindeki miladi gün, gecenin adındaki hicri günden bir önceki gündür (Miraç 27. gece → 26 Recep). */
+const HJ_FMT=(()=>{try{return new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{timeZone:'UTC',day:'numeric',month:'numeric',year:'numeric'})}catch{return null}})();
+function hijriAt(ms){
+  if(!HJ_FMT)return null;
+  try{const p={};HJ_FMT.formatToParts(new Date(ms)).forEach(x=>{p[x.type]=x.value});const d=+p.day,m=+p.month,y=+p.year;return d>0&&m>0&&y>0?{d,m,y}:null}catch{return null}
+}
+/* base: bugünün miladi tarihi, UTC öğle saati (ms). Dönüş: {n:ad, off:kaç gün sonra, night:gece mi, k:bayramın kaçıncı günü (varsa)} */
+function nextReligiousDay(base){
+  const H=i=>hijriAt(base+i*864e5),t=H(0);
+  if(!t)return null;
+  if(t.m===10&&t.d<=3)return{n:'Ramazan Bayramı',off:0,k:t.d};          /* bayramın içindeyiz */
+  if(t.m===12&&t.d>=10&&t.d<=13)return{n:'Kurban Bayramı',off:0,k:t.d-9};
+  for(let i=0;i<=400;i++){
+    const h=i?H(i):t,nx=H(i+1);if(!h||!nx)continue;
+    let n=null,night=false;
+    /* Regaip: Recep'in ilk Cuma gecesi, yani o Cuma'dan bir önceki Perşembe akşamı. */
+    if(new Date(base+i*864e5).getUTCDay()===4&&nx.m===7&&nx.d<=7){n='Regaip Kandili';night=true}
+    else if(h.m===7&&h.d===1)n='Üç Aylar Başlangıcı';
+    else if(h.m===7&&h.d===26){n='Miraç Kandili';night=true}
+    else if(h.m===8&&h.d===14){n='Berat Kandili';night=true}
+    else if(h.m===9&&h.d===1)n='Ramazan Başlangıcı';
+    else if(h.m===9&&h.d===26){n='Kadir Gecesi';night=true}
+    else if(nx.m===10&&nx.d===1)n='Ramazan Bayramı arefesi';
+    else if(h.m===10&&h.d===1)n='Ramazan Bayramı';
+    else if(h.m===12&&h.d===9)n='Kurban Bayramı arefesi';
+    else if(h.m===12&&h.d===10)n='Kurban Bayramı';
+    else if(h.m===1&&h.d===1)n='Hicri Yılbaşı';
+    else if(h.m===1&&h.d===10)n='Aşure Günü';
+    else if(h.m===3&&h.d===11){n='Mevlid Kandili';night=true}
+    if(n)return{n,off:i,night};
+  }
+  return null;
+}
+function religiousText(r){
+  if(r.k)return r.n+' · '+r.k+'. gün';
+  if(r.off===0)return(r.night?'Bu gece':'Bugün')+' · '+r.n;
+  if(r.off===1)return(r.night?'Yarın gece':'Yarın')+' · '+r.n;
+  return r.n+' · '+r.off+' gün sonra';
+}
 function mountPrayer(w,root){
-  root.innerHTML='<div class="pr"><div class="hd">'+logo('prayer')+'<span class="ttl">Namaz Vakitleri</span><span class="sp"></span><span class="pr-hj" id="hj"></span></div><div class="pr-next"><div class="pr-nm" id="pnm">Yükleniyor…</div><div class="pr-cd" id="pcd">--:--:--</div></div><div class="pr-times" id="ptm"></div><div class="foot">Diyanet hesaplama yöntemi · '+'<span id="pcity"></span></div></div>';
+  root.innerHTML='<div class="pr"><div class="hd">'+logo('prayer')+'<span class="ttl">Namaz Vakitleri</span><span class="sp"></span><span class="pr-hjw"><span class="pr-hj" id="hj"></span><span class="pr-ev" id="pev"></span></span></div><div class="pr-next"><div class="pr-nm" id="pnm">Yükleniyor…</div><div class="pr-cd" id="pcd">--:--:--</div></div><div class="pr-times" id="ptm"></div><div class="foot">Diyanet hesaplama yöntemi · '+'<span id="pcity"></span></div></div>';
   let data=null,secs=[],tz='Europe/Istanbul';
   const draw=()=>{
     if(!data)return;
@@ -962,6 +1009,14 @@ function mountPrayer(w,root){
   };
   /* Bugünün tarihi, seçili şehrin saat dilimine göre alınır (cihaz saatine göre değil). */
   const today=()=>new Intl.DateTimeFormat('en-GB',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date()).replace(/\//g,'-');
+  /* Tarihin altına en yakın dini gün: bayram, kandil, Ramazan başlangıcı vb. Hesaplanamazsa satır gizlenir. */
+  const paintEv=()=>{
+    const el=$('#pev',root);if(!el)return;
+    const [dd,mm,yy]=today().split('-').map(Number);
+    let r=null;try{r=nextReligiousDay(Date.UTC(yy,mm-1,dd,12))}catch{}
+    el.textContent=r?religiousText(r):'';
+    el.title=r?new Date(Date.UTC(yy,mm-1,dd+r.off,12)).toLocaleDateString('tr-TR',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric',weekday:'long'})+(r.night?' (akşamı başlar)':''):'';
+  };
   /* Yarının İmsak saati (yalnızca Yatsı ile gece yarısı arasında gerekir). Hata olursa 60 sn sonra yeniden dener. */
   let tom=null,tomBusy=false,tomRetry=0;
   const tomKey=()=>new Intl.DateTimeFormat('en-GB',{timeZone:tz,day:'2-digit',month:'2-digit',year:'numeric'}).format(new Date(Date.now()+864e5)).replace(/\//g,'-')+'|'+place.lat.toFixed(2)+'|'+place.lon.toFixed(2);
@@ -993,6 +1048,7 @@ function mountPrayer(w,root){
     data=j;status('pr',true);tz=newTz;
     secs=PRAYERS.map(p=>{const m=j.timings[p[0]].match(/(\d{1,2}):(\d{2})/);return(+m[1])*3600+(+m[2])*60});
     const h=j.date&&j.date.hijri;if(h)$('#hj',root).textContent=h.day+' '+(HIJRI[(+h.month.number)-1]||'')+' '+h.year;
+    paintEv();
     $('#pcity',root).textContent=place.name.split(',')[0];
     draw();
     /* Saat dilimi değiştiyse (ör. başka ülke seçildi) doğru günün vakitleri için bir kez daha yükle. */
