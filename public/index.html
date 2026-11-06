@@ -865,10 +865,17 @@ const hd=(id,title,extra='')=>'<div class="hd">'+logo(id)+'<span class="ttl">'+t
 const sbBtn='<button class="ibtn sbt" type="button" data-sb title="Arama çubuğunu aç/kapat" aria-label="Arama çubuğunu aç/kapat" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>';
 function sbWire(root){
   const f=$('.yt-in',root),b=$('[data-sb]',root);if(!f||!b)return;
-  let open=LS.get('pano.sb.open',true)!==false;
-  const apply=focus=>{f.hidden=!open;b.setAttribute('aria-pressed',open?'true':'false');b.classList.toggle('on',open);if(open&&focus){const i=$('input:not([hidden])',f);if(i)i.focus()}};
-  b.addEventListener('click',()=>{open=!open;LS.set('pano.sb.open',open);apply(true)});
+  const apply=focus=>{const open=LS.get('pano.sb.open',true)!==false;f.hidden=!open;b.setAttribute('aria-pressed',open?'true':'false');b.classList.toggle('on',open);if(open&&focus){const i=$('input:not([hidden])',f);if(i)i.focus()}};
+  b.addEventListener('click',()=>{LS.set('pano.sb.open',LS.get('pano.sb.open',true)===false);document.dispatchEvent(new Event('mediaui'));apply(true)});
+  document.addEventListener('mediaui',()=>apply(false));   /* düğme bir sekmede basılınca diğer sekmeler de aynı anda uyar */
   apply(false);
+}
+/* Kanal listesi düğmesi de YouTube · Kick · Twitch · TV sekmelerinde ortak: birinde aç/kapatınca hepsinde uygulanır ve hatırlanır */
+function listWire(tvp,tgl){
+  const apply=()=>{const on=LS.get('pano.media.list',1)!==0;tvp.classList.toggle('nolist',!on);tgl.setAttribute('aria-pressed',on)};
+  tgl.addEventListener('click',()=>{LS.set('pano.media.list',LS.get('pano.media.list',1)!==0?0:1);document.dispatchEvent(new Event('mediaui'))});
+  document.addEventListener('mediaui',apply);
+  apply();
 }
 
 /* ---------- Ağ yardımcıları ---------- */
@@ -1136,9 +1143,7 @@ function mountYT(w,root,tabs){
     '<div class="tvp-main"><div class="yt-view tvp-vid" id="ytv"></div><div class="tvp-side"><div class="tvp-list noscroll" id="ytl"></div></div></div></div>';
   sbWire(root);
   const tvp=$('.tvp',root),tgl=$('#ytt',root),view=$('#ytv',root),list=$('#ytl',root),inp=$('#yti',root);
-  const showList=on=>{tvp.classList.toggle('nolist',!on);tgl.setAttribute('aria-pressed',on);LS.set('pano.yt.list',on?1:0)};
-  showList(LS.get('pano.yt.list',1)!==0);
-  tgl.addEventListener('click',()=>showList(tvp.classList.contains('nolist')));
+  listWire(tvp,tgl);
   let chs=LS.get('pano.yt.ch',[]);
   chs=(Array.isArray(chs)?chs:[]).filter(c=>c&&/^UC[\w-]{22}$/.test(c.id)).slice(0,YT_MAX);
   const info={};let cur=null,busy=false,phT=0,loaded=false,playing=false,apiErr='',pending=null;
@@ -1587,9 +1592,7 @@ function mountKick(w,root,tabs){
    '<div class="tvp-main"><div class="tvp-vid" id="kkv"></div><div class="tvp-side"><div class="tvp-list noscroll" id="kkl"></div></div></div></div>';
   sbWire(root);
   const tvp=$('.tvp',root),tgl=$('#kkt',root),vid=$('#kkv',root),list=$('#kkl',root),inp=$('#kki',root);
-  const showList=on=>{tvp.classList.toggle('nolist',!on);tgl.setAttribute('aria-pressed',on);LS.set('pano.kick.list',on?1:0)};
-  showList(LS.get('pano.kick.list',1)!==0);
-  tgl.addEventListener('click',()=>showList(tvp.classList.contains('nolist')));
+  listWire(tvp,tgl);
   let chs=LS.get('pano.kick.ch',[]);
   chs=(Array.isArray(chs)?chs:[]).filter(s=>typeof s==='string'&&KICK_SLUG.test(s)).slice(0,MAX);
   const info={};let cur=null,busy=false,phT=0,loaded=false;
@@ -1681,9 +1684,7 @@ function mountTwitch(w,root,tabs){
    '<div class="tvp-main"><div class="tvp-vid" id="twv"></div><div class="tvp-side"><div class="tvp-list noscroll" id="twl"></div></div></div></div>';
   sbWire(root);
   const tvp=$('.tvp',root),tgl=$('#twt',root),vid=$('#twv',root),list=$('#twl',root),inp=$('#twi',root);
-  const showList=on=>{tvp.classList.toggle('nolist',!on);tgl.setAttribute('aria-pressed',on);LS.set('pano.twitch.list',on?1:0)};
-  showList(LS.get('pano.twitch.list',1)!==0);
-  tgl.addEventListener('click',()=>showList(tvp.classList.contains('nolist')));
+  listWire(tvp,tgl);
   let chs=LS.get('pano.twitch.ch',[]);
   chs=(Array.isArray(chs)?chs:[]).filter(s=>typeof s==='string'&&TW_SLUG.test(s)).slice(0,MAX);
   const info={};let cur=null,busy=false,phT=0,loaded=false;
@@ -1838,9 +1839,7 @@ function mountIPTV(w,root,tabs){
    '<div class="tvp-main"><div class="tvp-vid" id="tvv"></div><div class="tvp-side"><input id="m3s" class="tvp-s" type="search" placeholder="Kanal ara" aria-label="Kanal ara"><div class="tvp-list noscroll" id="m3l"></div></div></div></div>';
   sbWire(root);
   const tvp=$('.tvp',root),tgl=$('#m3t',root);
-  const showList=on=>{tvp.classList.toggle('nolist',!on);tgl.setAttribute('aria-pressed',on);LS.set('pano.iptv.list',on?1:0)};
-  showList(LS.get('pano.iptv.list',1)!==0);
-  tgl.addEventListener('click',()=>showList(tvp.classList.contains('nolist')));
+  listWire(tvp,tgl);
   const vid=$('#tvv',root),list=$('#m3l',root),inp=$('#m3u',root),sea=$('#m3s',root);
   let chans=[...TV_BUILTIN],cur=-1,hls=null,video=null;
   const chKey=c=>c.url||('yt:'+c.embed);
