@@ -3190,7 +3190,7 @@ function mountRadio(w,root){
     {k:'ht',name:'Habertürk',q:['habertürk','haberturk'],re:/habert[uü]rk/i,c:'#d71920',logo:'https://yt3.ggpht.com/SqaSrx9HvlbnpXqfrsyqJOpL3uHHi3GQ3htT3gPdP3S8yebiy4iVPrZ4Ai1wQnNoHv7aUBLIeEE=s96-c-k-c0x00ffffff-no-rj'},
     /* NTV Radyo: dizindeki kayıtlar yalnızca http (https sayfada açılmaz), biri de .pls. Resmî https HLS yayını sabit verildi. */
     {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',logo:'https://yt3.ggpht.com/wwJNZ3QBI5ojqIlQvsInUIwIuSQH-lhQaqv_-WR7gYvEqa6WNEfpdiTls8z30QIxQMFbTBUQ0Q=s96-c-k-c0x00ffffff-no-rj',fix:'https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8'},
-    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a',mono:'ODTÜ'}   /* resmî logo geniş bir yazı logosu, yuvarlak çerçeveye sığmaz: baş harf rozeti */
+    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a',mono:'ODTÜ',logo:'https://www.radyoodtu.com.tr/images/header/header-logo.png',pos:'left center'}   /* resmî logo geniş: soldaki yuvarlak amblem kırpılıp gösterilir; yüklenmezse baş harf rozeti */
   ];
   const norm=s=>({id:s.stationuuid,name:(s.name||'').trim().replace(/\s+/g,' '),url:s.url_resolved||s.url,alt:s.url,fav:s.favicon||'',br:s.bitrate||0,clk:s.clickcount||0});
   const up=u=>secure?String(u).replace(/^http:/i,'https:'):u;
@@ -3213,7 +3213,7 @@ function mountRadio(w,root){
   rng.value=Math.round(vol*100);
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
   /* Kanal rozeti: altta baş harf, üstte logo (logo yüklenmezse kaldırılır, baş harf kalır) */
-  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer">':'')+'</span>';
+  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.pos?' style="object-position:'+c.pos+'"':'')+'>':'')+'</span>';
   root.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.remove()},true);
   function paintList(){
     lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it'+(cur&&cur.k===c.k?' on':'')+(map[c.k]?'':' na')+'" data-k="'+c.k+'" title="'+esc(c.name)+'">'+lg(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('')+'';
