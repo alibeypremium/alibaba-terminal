@@ -1401,7 +1401,7 @@ function mountPC(w,root,tabs){
 
 /* ---------- YouTube + TV İzle + Video + Bilgisayar (tek widget, dört sekme) ---------- */
 function mountMedia(w,root){
-  const TABS=[['yt','YouTube'],['kk','Kick'],['tv','TV İzle'],['vd','Video'],['pc','Bilgisayar']];
+  const TABS=[['yt','YouTube'],['kk','Kick'],['tv','TV'],['vd','Video'],['pc','Bilgisayar']];
   let tab=LS.get('pano.media.tab','yt');if(!TABS.find(t=>t[0]===tab))tab='yt';
   const tabsHtml=()=>'<div class="dv-tabs" role="tablist">'+TABS.map(t=>'<button type="button" role="tab" aria-selected="'+(t[0]===tab)+'" class="'+(t[0]===tab?'on':'')+'" data-m="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
   root.innerHTML='<div class="mp" data-p="yt"></div><div class="mp" data-p="kk" hidden></div><div class="mp" data-p="tv" hidden></div><div class="mp" data-p="vd" hidden></div><div class="mp" data-p="pc" hidden></div>';
@@ -1576,7 +1576,7 @@ function loadHls(){
 /* M3U adresi kullanıcı adı/şifre/anahtar içeriyorsa üçüncü taraf proxy'ye gönderilmez. */
 const sensitiveUrl=u=>{try{const x=new URL(u);if(x.username||x.password)return true;for(const k of x.searchParams.keys())if(/user|pass|pwd|token|key|auth|secret|sig|session/i.test(k))return true}catch{}return false};
 function mountIPTV(w,root,tabs){
-  root.innerHTML='<div class="tvp">'+hd('iptv','TV İzle',tabs+sbBtn+'<button class="ibtn" type="button" id="m3t" title="Kanal listesini aç/kapat" aria-label="Kanal listesini aç/kapat" aria-pressed="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><label class="ibtn" for="m3f" title="M3U dosyası seç" style="cursor:pointer">'+I.file+'</label><input id="m3f" type="file" accept=".m3u,.m3u8,.txt" hidden>')+
+  root.innerHTML='<div class="tvp">'+hd('iptv','TV',tabs+sbBtn+'<button class="ibtn" type="button" id="m3t" title="Kanal listesini aç/kapat" aria-label="Kanal listesini aç/kapat" aria-pressed="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><label class="ibtn" for="m3f" title="M3U dosyası seç" style="cursor:pointer">'+I.file+'</label><input id="m3f" type="file" accept=".m3u,.m3u8,.txt" hidden>')+
    '<form class="yt-in" id="m3form"><input id="m3u" type="text" inputmode="url" placeholder=".m3u bağlantısını yapıştır" aria-label="M3U bağlantısı" autocomplete="off"><button class="yt-go" type="submit">Yükle</button></form>'+
    '<div class="tvp-main"><div class="tvp-vid" id="tvv"></div><div class="tvp-side"><input id="m3s" class="tvp-s" type="search" placeholder="Kanal ara" aria-label="Kanal ara"><div class="tvp-list noscroll" id="m3l"></div></div></div></div>';
   sbWire(root);
@@ -3113,7 +3113,7 @@ let tiltRaf=0,tiltEv=null;
 grid.addEventListener('pointermove',e=>{
   if(document.body.classList.contains('editing')||e.pointerType!=='mouse')return;
   const el=e.target.closest('.w');if(!el)return;
-  if(el.dataset.id==='youtube'&&(el.dataset.tab==='pc'||el.dataset.tab==='kk')){tiltEv=null;const s=el.style;s.setProperty('--rx','0deg');s.setProperty('--ry','0deg');s.setProperty('--glare',0);return}   /* Bilgisayar ve Kick sekmelerinde widget fareyle eğilmesin */
+  if(el.dataset.id==='youtube'){tiltEv=null;const s=el.style;s.setProperty('--rx','0deg');s.setProperty('--ry','0deg');s.setProperty('--glare',0);return}   /* YouTube · Kick · TV · Video · Bilgisayar widget'ı hiçbir sekmede fareyle eğilmesin */
   tiltEv={el,cx:e.clientX,cy:e.clientY};
   if(tiltRaf)return;
   tiltRaf=requestAnimationFrame(()=>{
