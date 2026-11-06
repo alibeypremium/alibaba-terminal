@@ -314,6 +314,7 @@ body.is-dragging .w{backdrop-filter:none;-webkit-backdrop-filter:none}
 .rd-disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 20deg,transparent 0 20%,rgba(255,255,255,.18) 25%,transparent 32% 70%,rgba(255,255,255,.12) 75%,transparent 82%)}
 .rd.live .rd-disc{animation-play-state:running}
 .rd-disc .rd-lg{width:26px;height:26px;font-size:7.5px;letter-spacing:-.02em;box-shadow:0 0 0 1.5px rgba(0,0,0,.35)}
+.rd-hole{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:#120a0d;box-shadow:0 0 0 1px rgba(255,255,255,.28),inset 0 1px 1px rgba(0,0,0,.6)}
 .rd-disc .rd-lg0{background:#3a2229;font-size:13px;font-weight:400;color:rgba(255,255,255,.7)}
 .rd-badge{display:inline-flex;align-items:center;gap:5px;padding:1px 8px 1px 6px;border-radius:999px;background:#e5322d;color:#fff;font-size:9.5px;font-weight:800;letter-spacing:.08em;line-height:1.5}
 .rd-badge i{width:6px;height:6px;border-radius:50%;background:#fff;animation:rdlive 1.4s ease-in-out infinite}
@@ -3189,7 +3190,7 @@ function mountRadio(w,root){
     {k:'ht',name:'Habertürk',q:['habertürk','haberturk'],re:/habert[uü]rk/i,c:'#d71920',logo:'https://yt3.ggpht.com/SqaSrx9HvlbnpXqfrsyqJOpL3uHHi3GQ3htT3gPdP3S8yebiy4iVPrZ4Ai1wQnNoHv7aUBLIeEE=s96-c-k-c0x00ffffff-no-rj'},
     /* NTV Radyo: dizindeki kayıtlar yalnızca http (https sayfada açılmaz), biri de .pls. Resmî https HLS yayını sabit verildi. */
     {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',logo:'https://yt3.ggpht.com/wwJNZ3QBI5ojqIlQvsInUIwIuSQH-lhQaqv_-WR7gYvEqa6WNEfpdiTls8z30QIxQMFbTBUQ0Q=s96-c-k-c0x00ffffff-no-rj',fix:'https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8'},
-    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a',mono:'ODTÜ',logo:'https://tr.wikipedia.org/wiki/Special:FilePath/Orta_Do%C4%9Fu_Teknik_%C3%9Cniversitesi.png?width=96',fit:'contain'}   /* ODTÜ'nün amblemi (Vikipedi); yüklenmezse baş harf rozeti */
+    {k:'odtu',name:'ODTÜ',q:['odtü','odtu'],re:/odt[uü]/i,c:'#ff9d1a',mono:'ODTÜ',logo:'https://tr.wikipedia.org/wiki/Special:FilePath/Orta_Do%C4%9Fu_Teknik_%C3%9Cniversitesi.png?width=96',fit:1}   /* ODTÜ'nün amblemi (Vikipedi): beyaz zeminli resim, yuvarlak etiketi dolduracak şekilde büyütülüp kırpılır; yüklenmezse baş harf rozeti */
   ];
   const norm=s=>({id:s.stationuuid,name:(s.name||'').trim().replace(/\s+/g,' '),url:s.url_resolved||s.url,alt:s.url,fav:s.favicon||'',br:s.bitrate||0,clk:s.clickcount||0});
   const up=u=>secure?String(u).replace(/^http:/i,'https:'):u;
@@ -3213,7 +3214,7 @@ function mountRadio(w,root){
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
   /* Kanal rozeti: altta baş harf, üstte logo (logo yüklenmezse kaldırılır, baş harf kalır) */
   const dot=c=>'<i class="rd-dot" style="--c:'+c.c+'"></i>';   /* kanal düğmelerinde renkli nokta; logo yalnızca plakta */
-  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+(c.fit?';background:#fff':'')+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="object-fit:'+c.fit+';inset:14%;width:72%;height:72%;transform:translateX(7%)"':'')+'>':'')+'</span>';
+  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+(c.fit?';background:#c8102e':'')+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="inset:auto;left:-5%;top:-3%;width:127%;height:106%;object-fit:fill"':'')+'>':'')+'</span>';
   root.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.remove()},true);
   function paintList(){
     lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it'+(cur&&cur.k===c.k?' on':'')+(map[c.k]?'':' na')+'" data-k="'+c.k+'" title="'+esc(c.name)+'">'+dot(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('')+'';
@@ -3223,7 +3224,7 @@ function mountRadio(w,root){
     const br=cur&&map[cur.k]&&+map[cur.k].br;
     const T={idle:cur?'Durdu':'Hazır',load:'<span class="rd-spin" aria-hidden="true"></span>Bağlanıyor…',play:'<span class="rd-badge"><i></i>CANLI</span>'+(br?'<span class="rd-br">'+br+' kbps</span>':''),err:'Bu yayın açılmadı',na:'Yayın adresi bulunamadı'};
     stt.innerHTML=T[state];stt.className='rd-st '+(state==='err'||state==='na'?'err':'');
-    disc.innerHTML=cur?lg(cur,true):'<span class="rd-lg rd-lg0">♪</span>';
+    disc.innerHTML=cur?lg(cur,true)+'<i class="rd-hole"></i>':'<span class="rd-lg rd-lg0">♪</span>';
     pl.innerHTML=state==='play'||state==='load'?IC.pause:IC.play;
     box.classList.toggle('live',state==='play');
     root.querySelectorAll('.rd-it').forEach(b=>b.classList.toggle('on',!!cur&&b.dataset.k===cur.k));
