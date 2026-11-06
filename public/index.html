@@ -1575,6 +1575,10 @@ function loadHls(){
 }
 /* M3U adresi kullanıcı adı/şifre/anahtar içeriyorsa üçüncü taraf proxy'ye gönderilmez. */
 const sensitiveUrl=u=>{try{const x=new URL(u);if(x.username||x.password)return true;for(const k of x.searchParams.keys())if(/user|pass|pwd|token|key|auth|secret|sig|session/i.test(k))return true}catch{}return false};
+/* Varsayılan kanal. Habertürk'ün kendi yayını (ciner.daioncdn.net) başka sitelerden okunmaya izin vermediği (CORS) için
+   Habertürk TV'nin resmî YouTube canlı yayını gömülür. Yayın 2 Nisan 2026'dan beri aynı video kimliğiyle sürüyor;
+   bir gün açılmazsa youtube.com/@HaberturkTV/live adresindeki güncel video kimliği buraya yazılır. */
+const TV_DEFAULT={name:'Habertürk TV',logo:'',group:'Haber',embed:'CJHVSYHpVvc'};
 function mountIPTV(w,root,tabs){
   root.innerHTML='<div class="tvp">'+hd('iptv','TV',tabs+sbBtn+'<button class="ibtn" type="button" id="m3t" title="Kanal listesini aç/kapat" aria-label="Kanal listesini aç/kapat" aria-pressed="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><label class="ibtn" for="m3f" title="M3U dosyası seç" style="cursor:pointer">'+I.file+'</label><input id="m3f" type="file" accept=".m3u,.m3u8,.txt" hidden>')+
    '<form class="yt-in" id="m3form"><input id="m3u" type="text" inputmode="url" placeholder=".m3u bağlantısını yapıştır" aria-label="M3U bağlantısı" autocomplete="off"><button class="yt-go" type="submit">Yükle</button></form>'+
@@ -1585,7 +1589,8 @@ function mountIPTV(w,root,tabs){
   showList(LS.get('pano.iptv.list',1)!==0);
   tgl.addEventListener('click',()=>showList(tvp.classList.contains('nolist')));
   const vid=$('#tvv',root),list=$('#m3l',root),inp=$('#m3u',root),sea=$('#m3s',root);
-  let chans=[],cur=-1,hls=null,video=null;
+  let chans=[TV_DEFAULT],cur=-1,hls=null,video=null;
+  const chKey=c=>c.url||('yt:'+c.embed);
   const note=m=>{stop();vid.innerHTML='<div class="yt-empty"><svg viewBox="0 0 64 56" style="width:56px;height:auto"><rect x="4" y="12" width="56" height="40" rx="8" fill="#34d1bf"/><rect x="10" y="18" width="44" height="28" rx="4" fill="#0b3b3f"/><path d="M26 25v14l12-7z" fill="#fff"/><path d="M22 4l10 8 10-8" stroke="#34d1bf" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><div>'+m+'</div></div>'};
   function stop(){if(hls){try{hls.destroy()}catch{}hls=null}if(video){try{video.pause();video.removeAttribute('src');video.load()}catch{}video=null}}
   const drawList=()=>{
@@ -1596,7 +1601,14 @@ function mountIPTV(w,root,tabs){
   };
   list.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.style.visibility='hidden'},true);
   function play(i){
-    const c=chans[i];if(!c)return;cur=i;LS.set('pano.iptv.last',c.url);stop();
+    const c=chans[i];if(!c)return;cur=i;LS.set('pano.iptv.last',chKey(c));stop();
+    if(c.embed){   /* YouTube canlı yayını: video yerine gömülü oynatıcı */
+      vid.innerHTML=/^https?:$/.test(location.protocol)
+        ?'<iframe title="'+esc(c.name)+'" src="https://www.youtube.com/embed/'+encodeURIComponent(c.embed)+'?autoplay=1&playsinline=1&rel=0&origin='+encodeURIComponent(location.origin)+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>'
+        :'<a class="yt-th" href="https://www.youtube.com/watch?v='+encodeURIComponent(c.embed)+'" target="_blank" rel="noopener noreferrer"><em>Dosya bilgisayardan açıldığı için YouTube gömülü oynatmayı reddediyor. Tıkla, YouTube\'da açılsın. Panoyu bir web adresinden açarsan burada oynar.</em></a>';
+      $$('.tvp-c',list).forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+      return;
+    }
     vid.innerHTML='<video controls autoplay playsinline></video><div class="tvp-name"></div>';
     video=$('video',vid);$('.tvp-name',vid).textContent=c.name;
     const fail=()=>{if(!$('.tvp-err',vid)){const d=document.createElement('div');d.className='tvp-err';d.textContent='Kanal açılamadı. Kaynak bu sayfadan oynatmaya izin vermiyor ya da yayın kapalı olabilir. Başka bir kanal dene.';vid.appendChild(d)}};
@@ -1620,9 +1632,9 @@ function mountIPTV(w,root,tabs){
     if(/#EXT-X-(STREAM-INF|TARGETDURATION|MEDIA-SEQUENCE)/.test(t)&&u)ch=[{name:'Canlı yayın',url:u,logo:'',group:''}];
     else ch=parseM3U(t);
     if(!ch.length){note('Bu bağlantıda kanal bulunamadı.');return}
-    chans=ch;cur=-1;sea.value='';drawList();
-    const last=LS.get('pano.iptv.last','');const li=chans.findIndex(c=>c.url===last);
-    if(auto)play(li>=0?li:0);else note('<b>'+chans.length+'</b> kanal yüklendi. Listeden bir kanal seç.');
+    chans=[TV_DEFAULT,...ch];cur=-1;sea.value='';drawList();
+    const last=LS.get('pano.iptv.last','');const li=chans.findIndex(c=>chKey(c)===last);
+    if(auto)play(li>=0?li:1);else note('<b>'+ch.length+'</b> kanal yüklendi. Listeden bir kanal seç.');   /* ilk sıra varsayılan kanal; yeni listede ilk kanaldan başlar */
   }
   async function loadUrl(u,auto){
     u=u.trim();if(!u)return;note('Kanallar yükleniyor…');
@@ -1630,7 +1642,7 @@ function mountIPTV(w,root,tabs){
     const priv=sensitiveUrl(u);
     try{t=await getText(u,20000)}catch{if(!priv){try{t=await viaProxy(u)}catch{}}}
     if(t==null){
-      if(/m3u8/i.test(u)){chans=[{name:'Canlı yayın',url:u,logo:'',group:''}];drawList();play(0)}
+      if(/m3u8/i.test(u)){chans=[TV_DEFAULT,{name:'Canlı yayın',url:u,logo:'',group:''}];drawList();play(1)}
       else note(priv?'Liste doğrudan alınamadı (site CORS izni vermiyor olabilir). Bağlantı kullanıcı adı/anahtar içerdiği için üçüncü taraf proxy kullanılmadı. Listeyi indirip sağ üstteki düğmeyle dosya olarak seç.':'Liste alınamadı. Bağlantıyı kontrol et ya da M3U dosyasını sağ üstteki düğmeyle seç.');
       return;
     }
@@ -1642,8 +1654,10 @@ function mountIPTV(w,root,tabs){
   inp.addEventListener('paste',()=>setTimeout(()=>{if(/^https?:/i.test(inp.value.trim()))loadUrl(inp.value,true)},30));
   $('#m3f',root).addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{loadText(await f.text(),'',true)}catch{note('Dosya okunamadı.')}});
   const saved=LS.get('pano.iptv.url','');
-  if(saved){inp.value=saved;loadUrl(saved,false)}else note('.m3u bağlantısı yapıştır veya dosya seç.<br>Kanallar burada listelenir.');
-  return{off(){stop();vid.innerHTML=''},on(){if(chans.length)note('<b>'+chans.length+'</b> kanal hazır. Listeden bir kanal seç.');else note('.m3u bağlantısı yapıştır veya dosya seç.<br>Kanallar burada listelenir.')},dispose:stop};   /* kapanınca hls.js bağlantısı da kapansın */
+  drawList();
+  /* Kayıtlı M3U yoksa varsayılan kanal (Habertürk TV) açılır; varsa liste yüklenir, kanalı sen seçersin. */
+  if(saved){inp.value=saved;loadUrl(saved,false)}else play(0);
+  return{off(){stop();vid.innerHTML=''},on(){if(!LS.get('pano.iptv.url',''))play(cur>=0?cur:0);else if(chans.length>1)note('<b>'+(chans.length-1)+'</b> kanal hazır. Listeden bir kanal seç.');else note('.m3u bağlantısı yapıştır veya dosya seç.<br>Kanallar burada listelenir.')},dispose:stop};   /* kapanınca hls.js bağlantısı da kapansın */
 }
 
 /* ---------- Döviz ---------- */
