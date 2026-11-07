@@ -777,6 +777,12 @@ button,.ibtn,.pill,.pc-k,.pc-pw,.tvp-c,.rd-it,.nt-tab,.tv-tab{touch-action:manip
 
 /* Sade mod ve düzenleme: bulanıklık (blur) kapalı, GPU yükü düşük */
 html[data-lite="1"] .w,.editing .w{backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Sade mod, eski bilgisayarlar için: her yerde bulanıklık, geçiş ve animasyon kapalı (haber şeridi hariç), widget'lar 3B katman olmaz,
+   büyük gölgeler kalkar. Video oynarken tarayıcı her kare için bunları yeniden çizmek zorunda kalıyordu. */
+html[data-lite="1"] *,html[data-lite="1"] *::before,html[data-lite="1"] *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:none!important}
+html[data-lite="1"] body:not(.editing) *:not(.tk-track),html[data-lite="1"] body:not(.editing) *::before,html[data-lite="1"] body:not(.editing) *::after{animation:none!important}
+html[data-lite="1"] .w{transform:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+html[data-lite="1"] .w::after{display:none}
 @media (prefers-reduced-motion:reduce){.editing .w{animation:none}.skel,.spin{animation:none}}
 </style>
 </head>
@@ -1902,7 +1908,8 @@ function mountIPTV(w,root,tabs){
       loadHls().then(H=>{
         if(video!==mine)return;   /* bu arada başka kanal seçildi / widget kapandı */
         if(H&&H.isSupported()){
-          hls=new H({maxBufferLength:20});hls.loadSource(c.url);hls.attachMedia(mine);
+          hls=new H({maxBufferLength:20,capLevelToPlayerSize:true});hls.loadSource(c.url);   /* widget küçükse daha düşük çözünürlük seçilir: eski bilgisayarda çözme yükü azalır */
+          hls.attachMedia(mine);
           hls.on(H.Events.MANIFEST_PARSED,()=>video&&video.play().catch(()=>{}));
           hls.on(H.Events.ERROR,(_,d)=>{if(d.fatal)fail()});
         }else{mine.src=c.url;mine.play().catch(()=>{});mine.addEventListener('error',fail,{once:true})}
@@ -3486,7 +3493,7 @@ function render(){
 /* 3B eğim + ışık (fare ile) */
 let tiltRaf=0,tiltEv=null;
 grid.addEventListener('pointermove',e=>{
-  if(document.body.classList.contains('editing')||e.pointerType!=='mouse')return;
+  if(document.body.classList.contains('editing')||e.pointerType!=='mouse'||document.documentElement.dataset.lite==='1')return;   /* Sade modda eğim yok */
   const el=e.target.closest('.w');if(!el)return;
   if(el.dataset.id==='youtube'){tiltEv=null;const s=el.style;s.setProperty('--rx','0deg');s.setProperty('--ry','0deg');s.setProperty('--glare',0);return}   /* YouTube · Kick · Twitch · TV · Video · Bilgisayar widget'ı hiçbir sekmede fareyle eğilmesin */
   tiltEv={el,cx:e.clientX,cy:e.clientY};
