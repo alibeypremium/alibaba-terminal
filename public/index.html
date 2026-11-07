@@ -129,9 +129,7 @@ h1{margin:4px 0 0;font-size:clamp(30px,5.4vw,46px);font-weight:700;letter-spacin
 .tk-tag{font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:999px;color:#fff;flex:none}
 .tk-src{color:var(--fg2);font-size:11px;font-weight:500}
 @keyframes tkm{to{transform:translateX(-50%)}}
-html[data-lite="1"] .tk-track{animation:none}
-html[data-lite="1"] .tk{overflow-x:auto;scrollbar-width:none}
-html[data-lite="1"] .tk-grp+.tk-grp{display:none}
+/* Sade modda da haber şeridi kayar (yalnızca hareketi azalt ayarı durdurur) */
 @media (prefers-reduced-motion:reduce){.tk-track{animation:none}.tk{overflow-x:auto;scrollbar-width:none}.tk-grp+.tk-grp{display:none}}
 
 /* Sığdırma modu (geniş ekran): tüm widget'lar tek sayfada */
