@@ -3195,7 +3195,7 @@ function mountControls(w,root){
 
 /* ---------- Yedekle ve aktar: ayarlar tarayıcıda (localStorage) durduğu için başka cihaza ya da adrese taşımak için dosyaya yazılır ---------- */
 const BK_OK=/^pano\.[\w.-]{1,80}$/;
-const BK_SKIP=/^pano\.(news\.c\.|tech\.c\.|tg\.(c|ts|t)$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
+const BK_SKIP=/^pano\.(news\.(c\.|strip$)|tech\.c\.|tg\.(c|ts|t)$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
 function bkCollect(withKeys){
   const o={};
   try{for(let i=0;i<localStorage.length;i++){
