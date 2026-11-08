@@ -403,6 +403,10 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-c ul{padding-left:1.2em;margin:0 0 .9em}
 .rdr-fix{position:fixed;left:50%;top:50%;translate:-50% -50%;width:min(620px,calc(100vw - 24px));height:min(78vh,720px);z-index:2001;padding:12px 16px 8px;box-shadow:0 30px 80px -10px rgba(0,0,0,.7),0 0 0 1px var(--line)}
 .rdr-bd{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.5)}
+.nw-i.has-img{display:grid;grid-template-columns:minmax(0,1fr) 62px;column-gap:10px;align-items:start}
+.nw-i.has-img b,.nw-i.has-img span{grid-column:1}
+.nw-th{grid-column:2;grid-row:1/span 2;width:62px;height:62px;object-fit:cover;border-radius:9px;background:rgba(127,127,127,.22)}
+@container (max-width:250px){.nw-th{display:none}.nw-i.has-img{display:block}}
 .rdr-w{margin-top:10px;font-size:11.5px;color:var(--t2)}
 .rdr-f{margin-top:1.2em!important}.rdr-f a{color:var(--acc);text-decoration:none;font-weight:600;font-size:12.5px}
 .nw-i{display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--line)}
@@ -2856,7 +2860,7 @@ function openReader(a){
   }
   const link=safeUrl(a.getAttribute('href'));
   ov.innerHTML='<div class="rdr-h"><button type="button" class="rdr-x" aria-label="Kapat" title="Kapat (Esc)">←</button><span class="rdr-d">'+esc(msg?'Telegram · '+sub.split(' · ')[0]:rdHost(url))+'</span><a class="rdr-g" href="'+esc(msg?link:url)+'" target="_blank" rel="noopener noreferrer">'+(msg?'Telegram\'da aç ↗':'Siteye git ↗')+'</a></div>'+
-    '<div class="rdr-c"><h2 class="rdr-t">'+esc(msg?'':title)+'</h2>'+(msg?'<p>'+esc(title)+'</p>':'<div class="skel"></div><div class="skel" style="width:85%"></div><div class="skel"></div><div class="skel" style="width:70%"></div>')+'</div>';
+    '<div class="rdr-c"><h2 class="rdr-t">'+esc(msg?'':title)+'</h2>'+(msg?(safeUrl(a.dataset.img)?'<img class="rdr-im" src="'+esc(safeUrl(a.dataset.img))+'" alt="" referrerpolicy="no-referrer" loading="lazy">':'')+'<p>'+esc(title)+'</p>':'<div class="skel"></div><div class="skel" style="width:85%"></div><div class="skel"></div><div class="skel" style="width:70%"></div>')+'</div>';
   const c=$('.rdr-c',ov);
   const onKey=e=>{if(e.key==='Escape')close()};
   const close=()=>{ov.remove();bd?.remove();document.removeEventListener('keydown',onKey)};
@@ -2868,7 +2872,8 @@ function openReader(a){
     clearTimeout(slow);
     if(!ov.isConnected)return;
     let h='<h2 class="rdr-t">'+esc(art.title&&art.title.length<title.length*1.6?art.title:title)+'</h2>',ul=false;
-    for(const b of art.blocks){
+    const blocks=art.blocks.some(b=>b.k==='img')||!safeUrl(a.dataset.img)?art.blocks:[{k:'img',v:a.dataset.img},...art.blocks];   /* makalede görsel yoksa Telegram görseli */
+    for(const b of blocks){
       if(b.k!=='li'&&ul){h+='</ul>';ul=false}
       if(b.k==='img'){const u=safeUrl(b.v);if(u)h+='<img class="rdr-im" src="'+esc(u)+'" alt="" referrerpolicy="no-referrer" loading="lazy">'}
       else if(b.k==='h')h+='<h3>'+esc(b.v)+'</h3>';
@@ -2885,6 +2890,7 @@ function openReader(a){
     c.innerHTML='<h2 class="rdr-t">'+esc(title)+'</h2><div class="nw-msg"><div>Metin okuma modunda alınamadı.<br><span style="font-size:11px;opacity:.7">Site izin vermiyor ya da servis yanıt vermedi.</span></div><a class="rdr-btn" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Siteye git ↗</a></div>';
   });
 }
+document.addEventListener('error',e=>{const t=e.target;if(t&&t.classList&&(t.classList.contains('nw-th')||t.classList.contains('rdr-im')))t.remove()},true);
 document.addEventListener('click',e=>{
   const a=e.target.closest&&e.target.closest('a.nw-i[data-rd],a.tk-i[data-rd]');
   if(!a||e.defaultPrevented||e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
@@ -3216,8 +3222,13 @@ async function tgFetch(c){
       if(/(^|\.)(t\.me|telegram\.(me|org)|telegra\.ph)$/i.test(host))continue;
       ext=h;break;
     }
+    /* Mesajın ilk görseli: fotoğraf, video kapağı ya da bağlantı önizlemesi. */
+    let img='';
+    for(const n of m.querySelectorAll('.tgme_widget_message_photo_wrap,.tgme_widget_message_video_thumb,.link_preview_image,.link_preview_right_image')){
+      const mm=(n.getAttribute('style')||'').match(/url\(\s*['"]?([^'")]+)/);if(mm&&/^https:\/\//.test(mm[1])){img=mm[1];break}
+    }
     const tm=m.querySelector('.tgme_widget_message_date time');
-    return{title:txt.slice(0,400),link:'https://t.me/'+post,ext,cat:c.cat,date:tm?tm.getAttribute('datetime'):'',source:c.name,ch:c.k};
+    return{title:txt.slice(0,400),link:'https://t.me/'+post,ext,img,cat:c.cat,date:tm?tm.getAttribute('datetime'):'',source:c.name,ch:c.k};
   }).filter(x=>x&&safeUrl(x.link));
   if(!items.length){const err=new Error('tg');err.detail=c.name+': 0 mesaj ayrıştırıldı';throw err}   /* boş sonuç başarı sayılmasın, eski veriyi ezmesin */
   return items;
@@ -3280,7 +3291,7 @@ function mountTelegram(w,root,tabs){
   const show=()=>{
     const it=view();
     if(!it.length)return false;
-    list.innerHTML=it.map(x=>{const d=TG_DIRECT.includes(x.cat)&&safeUrl(x.ext);return'<a class="nw-i"'+(d?'':x.ext?' data-rd="1" data-rd-url="'+esc(safeUrl(x.ext))+'"':' data-rd="msg"')+' href="'+esc(d?safeUrl(x.ext):safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(x.title)+'</b><span>'+esc([x.source,ago(x.date)].filter(Boolean).join(' · ')+(d?' · ürüne git ↗':''))+'</span></a>'}).join('');
+    list.innerHTML=it.map(x=>{const d=TG_DIRECT.includes(x.cat)&&safeUrl(x.ext);const im=safeUrl(x.img);return'<a class="nw-i'+(im?' has-img':'')+'"'+(im?' data-img="'+esc(im)+'"':'')+(d?'':x.ext?' data-rd="1" data-rd-url="'+esc(safeUrl(x.ext))+'"':' data-rd="msg"')+' href="'+esc(d?safeUrl(x.ext):safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(x.title)+'</b><span>'+esc([x.source,ago(x.date)].filter(Boolean).join(' · ')+(d?' · ürüne git ↗':''))+'</span>'+(im?'<img class="nw-th" src="'+esc(im)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'')+'</a>'}).join('');
     paintFoot();
     return true;
   };
