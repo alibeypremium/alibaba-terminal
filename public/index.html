@@ -2728,8 +2728,8 @@ const RD_COOKIE=/tanımlama bilgi|çerez|cookie|ziyaret ettiğinizde|tercihlerin
 const RD_DATE=/\b20\d\d\b.*\b\d{1,2}[:.]\d{2}\b/;
 function rdPick(items,title){
   const t40=title.slice(0,40).toLocaleLowerCase('tr');
-  const glue=x=>{const n=(x.plain.match(/[a-zçğıöşü][A-ZÇĞİÖŞÜ]/g)||[]).length;return n>=4&&n/x.plain.length>.025};   /* boşluksuz yapışık menü yazısı */
-  const bad=x=>x.menu||x.plain.startsWith('|')||RD_JUNK.test(x.low)||(x.plain.length<400&&(RD_FOOT.test(x.plain)||glue(x)))||(x.plain.length<1200&&RD_COOKIE.test(x.low))||(x.plain.length<160&&RD_META.test(x.low))||(x.plain.length<100&&RD_DATE.test(x.plain))||(t40.length>20&&x.low.startsWith(t40));
+  const glue=x=>{const n=(x.plain.match(/[a-zçğıöşü][A-ZÇĞİÖŞÜ]/g)||[]).length;return n>=3&&n/x.plain.length>.02};   /* boşluksuz yapışık menü yazısı */
+  const bad=x=>x.menu||x.plain.startsWith('|')||RD_JUNK.test(x.low)||(x.plain.length<900&&glue(x))||(x.plain.length<400&&RD_FOOT.test(x.plain))||(x.plain.length<1200&&RD_COOKIE.test(x.low))||(x.plain.length<160&&RD_META.test(x.low))||(x.plain.length<100&&RD_DATE.test(x.plain))||(t40.length>20&&x.low.startsWith(t40));
   const stop=x=>x.plain.length<90&&(RD_STOP.test(x.low)||RD_ANY_STOP.test(x.low));
   const prose=x=>x.k==='p'&&!bad(x)&&x.plain.length>=80;
   const idx=[];items.forEach((x,i)=>{if(prose(x))idx.push(i)});
@@ -2744,7 +2744,7 @@ function rdPick(items,title){
     for(let j=e+1;j<items.length&&j<=e+6;j++){const x=items[j];if(stop(x))break;if(x.menu||x.k==='img'||bad(x)||x.k==='h'||x.lr>.2)continue;if(x.plain.length>=(x.k==='li'?6:25))e=j}
   }
   const blocks=[],seen=new Set();let text=0,imgs=0;
-  for(let j=Math.max(0,s-12);j<=e;j++){
+  for(let j=Math.max(0,s-30);j<=e;j++){
     const x=items[j];
     if(x.k==='img'){if(imgs<3&&!bad(x))blocks.push({k:'img',v:x.v}),imgs++;continue}
     if(j<s)continue;
@@ -2781,7 +2781,7 @@ function rdFromHtml(html){
   const d=new DOMParser().parseFromString(html,'text/html');
   const title=(d.querySelector('meta[property="og:title"]')?.content||d.querySelector('h1')?.textContent||d.title||'').trim();
   const lead=d.querySelector('meta[property="og:image"]')?.content||'';
-  d.querySelectorAll('script,style,noscript,nav,aside,footer,form,iframe,svg,button,[class*="reklam" i],[class*="advert" i],[id*="reklam" i],[class*="banner" i],[class*="related" i],[class*="comment" i],[class*="cookie" i],[class*="consent" i]').forEach(n=>n.remove());
+  d.querySelectorAll('script,style,noscript,nav,header nav,aside,footer,form,[role="navigation"],[class*="menu" i],[class*="navbar" i],[id*="menu" i],[class*="breadcrumb" i],iframe,svg,button,[class*="reklam" i],[class*="advert" i],[id*="reklam" i],[class*="banner" i],[class*="related" i],[class*="comment" i],[class*="cookie" i],[class*="consent" i]').forEach(n=>n.remove());
   const score=el=>[...el.querySelectorAll('p')].reduce((n,p)=>{const L=p.textContent.trim().length;return n+(L>40?L:0)},0);
   const box=[...d.querySelectorAll('article,[itemprop=articleBody],main,.content,.article,body')].map(el=>[score(el),el]).sort((a,b)=>b[0]-a[0])[0]?.[1];
   const items=[];let last='';
@@ -2793,6 +2793,15 @@ function rdFromHtml(html){
   const r=rdPick(items,title);
   if(/^https?:/i.test(lead))r.blocks.unshift({k:'img',v:lead});
   return{title,blocks:r.blocks,text:r.text};
+}
+const RD_OG=new Map();
+function rdOg(url){   /* makale görseli yoksa sayfanın og:image'i (ham HTML'den) */
+  if(RD_OG.has(url))return RD_OG.get(url);
+  const p=Promise.race([viaProxy(url),new Promise((_,j)=>setTimeout(j,9000))]).then(t=>{
+    const m=String(t).match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*>/i);
+    const c=m&&m[0].match(/content=["']([^"']+)/i);const u=c&&safeUrl(c[1].replace(/&amp;/g,'&'));
+    return u&&!/logo|icon|sprite|1x1|\.svg/i.test(u)?u:''}).catch(()=>'');
+  RD_OG.set(url,p);return p;
 }
 const RD_INF=new Map(),RD_KEY='pano.rd.c',RD_TTL=12*3600e3;
 function rdStore(url,art){
@@ -2894,6 +2903,7 @@ function openReader(a){
     if(ul)h+='</ul>';
     h+='<p class="rdr-f"><a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Orijinal haberi sitesinde aç ↗</a></p>';
     c.innerHTML=h;c.scrollTop=0;
+    if(!blocks.some(b=>b.k==='img'))rdOg(url).then(u=>{if(u&&ov.isConnected&&!$('.rdr-im',c)){const t=$('.rdr-t',c);const im=document.createElement('img');im.className='rdr-im';im.referrerPolicy='no-referrer';im.alt='';im.src=u;im.addEventListener('error',()=>im.remove());if(t)t.after(im);else c.prepend(im)}});
     $$('.rdr-im',c).forEach(i=>i.addEventListener('error',()=>i.remove()));
   }).catch(()=>{
     clearTimeout(slow);
