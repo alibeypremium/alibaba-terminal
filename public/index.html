@@ -400,6 +400,7 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-c p,.rdr-c li{font-size:clamp(13.5px,3.7cqw,16px);line-height:1.55;margin:0 0 .85em}
 .rdr-c h3{font-size:1.05em;margin:1em 0 .4em}
 .rdr-c ul{padding-left:1.2em;margin:0 0 .9em}
+.rdr-w{margin-top:10px;font-size:11.5px;color:var(--t2)}
 .rdr-f{margin-top:1.2em!important}.rdr-f a{color:var(--acc);text-decoration:none;font-weight:600;font-size:12.5px}
 .nw-i{display:block;text-decoration:none;padding:9px 0;border-bottom:1px solid var(--line)}
 .nw-i:last-child{border:0}
@@ -2765,15 +2766,51 @@ function rdFromHtml(html){
   if(/^https?:/i.test(lead))blocks.unshift({k:'img',v:lead});
   return{title,blocks,text};
 }
-async function rdFetch(url){
+const RD_INF=new Map(),RD_KEY='pano.rd.c',RD_TTL=12*3600e3;
+function rdStore(url,art){
+  try{const c=LS.get(RD_KEY,{});c[url]={t:Date.now(),a:art};
+    const ks=Object.keys(c).sort((x,y)=>c[y].t-c[x].t);ks.slice(10).forEach(k=>delete c[k]);
+    ks.forEach(k=>{if(Date.now()-c[k].t>RD_TTL)delete c[k]});LS.set(RD_KEY,c)}catch{}
+}
+function rdCached(url){
   if(RD_CACHE.has(url))return RD_CACHE.get(url);
+  const e=LS.get(RD_KEY,{})[url];
+  if(e&&Date.now()-e.t<RD_TTL){RD_CACHE.set(url,e.a);return e.a}
+  return null;
+}
+function rdFetch(url){
+  const hit=rdCached(url);if(hit)return Promise.resolve(hit);
+  if(RD_INF.has(url))return RD_INF.get(url);
   const ok=a=>{if(!a||a.text<250)throw new Error('kısa');return a};
   const jina=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),16000);
     try{const r=await fetch('https://r.jina.ai/'+url,{signal:c.signal,headers:{'X-Return-Format':'markdown'}});if(!r.ok)throw new Error(r.status);return rdFromMd(await r.text())}finally{clearTimeout(t)}};
   const raw=async()=>rdFromHtml(await viaProxy(url));
-  const art=await Promise.any([jina().then(ok),raw().then(ok)]);
-  RD_CACHE.set(url,art);if(RD_CACHE.size>30)RD_CACHE.delete(RD_CACHE.keys().next().value);
-  return art;
+  const p=Promise.any([jina().then(ok),raw().then(ok)]).then(art=>{
+    RD_CACHE.set(url,art);if(RD_CACHE.size>30)RD_CACHE.delete(RD_CACHE.keys().next().value);rdStore(url,art);return art;
+  }).finally(()=>RD_INF.delete(url));
+  RD_INF.set(url,p);return p;
+}
+/* Ön yükleme: üstüne gelinen/dokunulan haberin metni önceden çekilir; listedeki ilk haberler boşta sırayla ısıtılır (Sade modda ve veri tasarrufunda yapılmaz). */
+const rdWarmOK=()=>document.documentElement.dataset.lite!=='1'&&!navigator.connection?.saveData&&!document.hidden;
+let rdHov=0;
+document.addEventListener('mouseover',e=>{
+  const a=e.target.closest&&e.target.closest('a.nw-i[data-rd]');if(!a)return;
+  clearTimeout(rdHov);rdHov=setTimeout(()=>{const u=safeUrl(a.getAttribute('href'));if(u&&!rdCached(u))rdFetch(u).catch(()=>{})},150);
+},{passive:true});
+document.addEventListener('touchstart',e=>{
+  const a=e.target.closest&&e.target.closest('a.nw-i[data-rd]');if(!a)return;
+  const u=safeUrl(a.getAttribute('href'));if(u&&!rdCached(u))rdFetch(u).catch(()=>{});
+},{passive:true});
+const rdTimers=new WeakMap();
+function rdWarm(list){
+  clearTimeout(rdTimers.get(list));
+  rdTimers.set(list,setTimeout(async()=>{
+    for(const a of [...list.querySelectorAll('a.nw-i[data-rd]')].slice(0,2)){
+      if(!rdWarmOK()||!list.isConnected||list.offsetParent===null)return;
+      const u=safeUrl(a.getAttribute('href'));
+      if(u&&!rdCached(u)){try{await rdFetch(u)}catch{}await new Promise(r=>setTimeout(r,3000))}
+    }
+  },4000));
 }
 function openReader(a){
   const url=safeUrl(a.getAttribute('href')),host=a.closest('.nw');if(!url||!host)return;
@@ -2789,7 +2826,9 @@ function openReader(a){
   const close=()=>{ov.remove();document.removeEventListener('keydown',onKey)};
   document.addEventListener('keydown',onKey);
   $('.rdr-x',ov).onclick=close;
+  const slow=setTimeout(()=>{if(ov.isConnected&&c.querySelector('.skel'))c.insertAdjacentHTML('beforeend','<div class="rdr-w">Site yavaş yanıt veriyor, bekleniyor…</div>')},4000);
   rdFetch(url).then(art=>{
+    clearTimeout(slow);
     if(!ov.isConnected)return;
     let h='<h2 class="rdr-t">'+esc(art.title&&art.title.length<title.length*1.6?art.title:title)+'</h2>',ul=false;
     for(const b of art.blocks){
@@ -2804,6 +2843,7 @@ function openReader(a){
     c.innerHTML=h;c.scrollTop=0;
     $$('.rdr-im',c).forEach(i=>i.addEventListener('error',()=>i.remove()));
   }).catch(()=>{
+    clearTimeout(slow);
     if(!ov.isConnected)return;
     c.innerHTML='<h2 class="rdr-t">'+esc(title)+'</h2><div class="nw-msg"><div>Metin okuma modunda alınamadı.<br><span style="font-size:11px;opacity:.7">Site izin vermiyor ya da servis yanıt vermedi.</span></div><a class="rdr-btn" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Siteye git ↗</a></div>';
   });
@@ -2822,6 +2862,7 @@ function mountNews(w,root,kind,tabs){
   const show=items=>{
     list.innerHTML=items.filter(x=>safeUrl(x.link)).map(x=>'<a class="nw-i" data-rd="1" href="'+esc(safeUrl(x.link))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(x.title)+'</b><span>'+esc([x.source,ago(x.date)].filter(Boolean).join(' · '))+'</span></a>').join('');
     foot.textContent=SRC+' · '+(items.stale?'eski veri · '+hms(items.stale):new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
+    rdWarm(list);
   };
   const fail=()=>{list.innerHTML='<div class="nw-msg"><div>Haberler şu an alınamadı.</div><button type="button" id="nrt">Tekrar dene</button></div>';$('#nrt',list).onclick=()=>load(true)};
   /* Kalıcı havuz: haberler başlığa göre tekilleşir, her haberin ilk görülen saati korunur.
@@ -2987,6 +3028,7 @@ function mountTechNews(w,root){
   const show=items=>{
     list.innerHTML=items.map(x=>'<a class="nw-i" data-rd="1" href="'+esc(x.link)+'" target="_blank" rel="noopener noreferrer"><b>'+esc(x.title)+'</b><span>'+esc([x.source,ago(x.date)].filter(Boolean).join(' · '))+'</span></a>').join('');
     foot.textContent=items.stale?'eski veri · '+hms(items.stale):srcNames()+' · '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+    rdWarm(list);
   };
   const fail=()=>{list.innerHTML='<div class="nw-msg"><div>Haberler şu an alınamadı.</div><button type="button" id="nrt">Tekrar dene</button></div>';foot.textContent='';$('#nrt',list).onclick=()=>load(true)};
   /* Sekme başına kalıcı havuz: yeni çekim eski listeyle birleşir (başlığa göre tekilleşir). Gecikmeli/önbellekli bir kaynak
@@ -3320,7 +3362,7 @@ function mountControls(w,root){
 
 /* ---------- Yedekle ve aktar: ayarlar tarayıcıda (localStorage) durduğu için başka cihaza ya da adrese taşımak için dosyaya yazılır ---------- */
 const BK_OK=/^pano\.[\w.-]{1,80}$/;
-const BK_SKIP=/^pano\.(news\.(c\.|strip$)|tech\.c\.|tg\.(c|ts|t)$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
+const BK_SKIP=/^pano\.(news\.(c\.|strip$)|tech\.c\.|tg\.(c|ts|t)$|rd\.c$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
 function bkCollect(withKeys){
   const o={};
   try{for(let i=0;i<localStorage.length;i++){
