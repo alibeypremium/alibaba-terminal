@@ -686,14 +686,14 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 .bk-b.on{background:#0a84ff;border-color:transparent;color:#fff}
 .bk-b[hidden]{display:none}
 .bk-msg{min-height:1.4em;font-size:13px;line-height:1.45;color:var(--fg)}
-.ctl{flex:1;min-height:0;display:flex;gap:8px}
-.ctl button{appearance:none;flex:1;min-width:0;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;border-radius:16px;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .15s,background .2s}
+.ctl{--g:8px;flex:1;min-height:0;container-type:size;display:grid;grid-template-columns:repeat(2,max-content);justify-content:center;align-content:center;gap:var(--g)}   /* her sırada 2 kare düğme */
+.ctl button{appearance:none;width:min(calc((100cqw - var(--g)) / 2),calc((100cqh - var(--g)) / 2));aspect-ratio:1;min-width:0;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;border-radius:16px;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .15s,background .2s}
 .ctl button:hover{background:rgba(255,255,255,.22)}
 .ctl button:active{transform:scale(.96)}
 .ctl button.on{background:#0a84ff;border-color:transparent}
-.ctl button svg{width:clamp(20px,22cqw,30px);height:auto;aspect-ratio:1;display:block}
+.ctl button svg{width:50%;max-width:30px;height:auto;aspect-ratio:1;display:block}
 /* 1x1 (dar) kutuda: başlık gizlenir, üç düğme alt alta dizilir */
-@container (max-width:210px){.ctlw .hd{display:none}.ctlw .ctl{flex-direction:column;gap:6px}.ctlw .ctl button{border-radius:13px}.ctlw .ctl button svg{width:20px}}
+@container (max-width:210px){.ctlw .hd{display:none}.ctlw .ctl{--g:6px}.ctlw .ctl button{border-radius:13px}}
 
 /* Yeni oyunlar / film ve etkinlik */
 .w[data-id=games]{--w-bg:radial-gradient(circle at 90% 0%,rgba(167,139,250,.32),transparent 55%),linear-gradient(160deg,rgba(54,22,112,.96),rgba(16,9,46,.98));--acc:#b79cff}
@@ -2923,9 +2923,9 @@ function mountTechNews(w,root){
   const arm=()=>{clearTimeout(timer);timer=setTimeout(()=>{
     if(w._gen!==gen)return;   /* widget kaldırıldı */
     tab=TECH_TABS[(TECH_TABS.findIndex(t=>t[0]===tab)+1)%TECH_TABS.length][0];
-    LS.set('pano.tech.tab',tab);tt.innerHTML=tabsHtml();load();arm();
+    LS.set('pano.tech.tab',tab);tt.innerHTML=tabsHtml();list.scrollTop=0;load();list.scrollTop=0;arm();
   },60e3)};
-  root.addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;LS.set('pano.tech.tab',tab);tt.innerHTML=tabsHtml();load();arm()});
+  root.addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;LS.set('pano.tech.tab',tab);tt.innerHTML=tabsHtml();list.scrollTop=0;load();list.scrollTop=0;arm()});   /* yeni sekme en üstten başlasın */
   btn.addEventListener('click',()=>load(true));
   arm();
   load();every(w,()=>load(),15*60e3);onBus(w,'refresh',()=>load());
@@ -3134,6 +3134,7 @@ function mountTelegram(w,root,tabs){
     const b=e.target.closest('[data-t]');if(!b)return;
     tab=b.dataset.t;LS.set('pano.tg.tab',tab);tt.innerHTML=tabsHtml();
     if(!show())empty();
+    list.scrollTop=0;   /* yeni sekme en üstteki haberden başlasın */
   });
   btn.addEventListener('click',()=>load(true));
   every(w,()=>{if(!root.hidden&&list.querySelector('.nw-i'))paintFoot()},30e3);   /* "x dk önce" ve "eski" bilgisi kendiliğinden güncellensin */
@@ -3154,6 +3155,7 @@ function mountHaber(w,root){
     TABS.forEach(([k])=>{if(k!==t){pane[k].hidden=true;if(api[k]&&api[k].off)api[k].off()}});
     pane[t].hidden=false;
     if(!api[t])api[t]=mounters[t](w,pane[t],tabsHtml())||{};else if(api[t].on)api[t].on();
+    $$('.nw-list',pane[t]).forEach(l=>{l.scrollTop=0});   /* Son Dakika ↔ Telegram geçişinde de en üstten başlasın */
     $$('.wtabs button',root).forEach(b=>{const on=b.dataset.m===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
   }
   root.addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b&&b.dataset.m!==tab)show(b.dataset.m)});
