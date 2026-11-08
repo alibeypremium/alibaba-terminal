@@ -397,7 +397,7 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-c{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;padding:10px 2px 4px}
 .rdr-c *{max-width:100%}
 .rdr-t{margin:0 0 8px;font-size:clamp(17px,5cqw,24px);line-height:1.22;font-weight:700;letter-spacing:-.01em}
-.rdr-im{display:block;width:100%;max-height:44cqh;object-fit:cover;border-radius:10px;margin:4px 0 10px;background:rgba(127,127,127,.18)}
+.rdr-im{display:block;width:auto;height:auto;max-width:100%;max-height:46cqh;object-fit:contain;border-radius:10px;margin:4px auto 10px}   /* büyütmeden, kırpmadan sığdır */
 .rdr-c p,.rdr-c li{font-size:clamp(13.5px,3.7cqw,16px);line-height:1.55;margin:0 0 .85em}
 .rdr-c h3{font-size:1.05em;margin:1em 0 .4em}
 .rdr-c ul{padding-left:1.2em;margin:0 0 .9em}
@@ -2720,13 +2720,17 @@ const mountEvents=(w,r)=>mountCovers(w,r,{id:'events',title:'Vizyondaki Filmler'
 const RD_CACHE=new Map();
 const rdHost=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return''}};
 const RD_STOP=/^(ilgili (haber|içerik|yazı|video)|ilginizi çekebilir|çok okunan|çok izlenen|çok paylaşılan|en çok (okunan|izlenen|paylaşılan)|diğer haberler|benzer|yorumlar|yorum yap|yorum|etiketler|bunlar da ilginizi|önerilen|sizin için|haberi paylaş|abone ol|bülten|tüm hakları|©|copyright|gizlilik|kvkk|reklam verin|künye|bizi takip edin|sosyal medya)/i;
-const RD_JUNK=/^(reklam$|reklam\b|advertisement|sponsorlu|paylaş|whatsapp|facebook|twitter|e-?posta|kopyala|google news|mozilla\/|günlük gelişmeleri|haberde hata|bize bildirin|30 saniyede|özeti (gizle|göster)|okunma|\d+ (sn|dk|sa|saat|gün) önce|fotoğraf\b|foto[ğg]raf\s*[:·/]|foto\s*[:·/]|kaynak\s*:|editör|okuma süresi|güncelleme\s*:|lütfen daha sonra|videonuz yüklenirken|yazdır|küçült|büyült|yazı boyutu|devamını oku|haberin devamı|haberi dinle|reklamı geç|reklamlar|galeri\b|sevdim|güldüm|heyecan\d|yazar:|haber merkezi$)/i;
+const RD_JUNK=/^(reklam$|reklam\b|advertisement|sponsorlu|paylaş|whatsapp|facebook|twitter|e-?posta|kopyala|google news|mozilla\/|günlük gelişmeleri|haberde hata|bize bildirin|30 saniyede|özeti (gizle|göster)|okunma|\d+ (sn|dk|sa|saat|gün) önce|fotoğraf\b|foto[ğg]raf\s*[:·/]|foto\s*[:·/]|kaynak\s*:|editör|okuma süresi|güncelleme\s*:|lütfen daha sonra|videonuz yüklenirken|yazdır|küçült|büyült|yazı boyutu|devamını oku|haberin devamı|haberi dinle|reklamı geç|reklamlar|galeri\b|sevdim|güldüm|heyecan\d|yazar:|haber merkezi$|sıradaki haber|final url|a 1x1 image|kategorisinde en çok|kaydet$|podcast formatında|dinle\s*-+:)/i;
 const RD_META=/okuma süresi|mozilla\/5\.0|çerez|cookie|^\d{1,2} [a-zçğıöşü]+ 20\d\d\b|\bdk okuma\b|©|tüm hakları|sevdim|güldüm|sponsor|brought to you by|insights|kontrol et$|devam ediyor!?$|erişimi var mı|okur tepkisi|e-?posta ile|arkadaşınıza|ne uyandırdı|bu içerik sende/i;
+const RD_FOOT=/©|™|®|tüm hakları|all rights reserved|warnermedia|holding a\.ş/i;
+const RD_ANY_STOP=/(en çok|çok) (okunan|izlenen|paylaşılan|yorumlanan)|ilginizi çekebilir|benzer (haber|içerik)|önerilen (haber|içerik)|diğer haberler|ilgili haberler|bunları da (oku|izle)|sıradaki haber/;
+const RD_COOKIE=/tanımlama bilgi|çerez|cookie|ziyaret ettiğinizde|tercihlerinizi|aydınlatma metni|gizlilik politikası|kişisel verilerinizi/i;
 const RD_DATE=/\b20\d\d\b.*\b\d{1,2}[:.]\d{2}\b/;
 function rdPick(items,title){
   const t40=title.slice(0,40).toLocaleLowerCase('tr');
-  const bad=x=>x.menu||x.plain.startsWith('|')||RD_JUNK.test(x.low)||(x.plain.length<160&&RD_META.test(x.low))||(x.plain.length<100&&RD_DATE.test(x.plain))||(t40.length>20&&x.low.startsWith(t40));
-  const stop=x=>x.plain.length<90&&RD_STOP.test(x.low);
+  const glue=x=>{const n=(x.plain.match(/[a-zçğıöşü][A-ZÇĞİÖŞÜ]/g)||[]).length;return n>=4&&n/x.plain.length>.025};   /* boşluksuz yapışık menü yazısı */
+  const bad=x=>x.menu||x.plain.startsWith('|')||RD_JUNK.test(x.low)||(x.plain.length<400&&(RD_FOOT.test(x.plain)||glue(x)))||(x.plain.length<1200&&RD_COOKIE.test(x.low))||(x.plain.length<160&&RD_META.test(x.low))||(x.plain.length<100&&RD_DATE.test(x.plain))||(t40.length>20&&x.low.startsWith(t40));
+  const stop=x=>x.plain.length<90&&(RD_STOP.test(x.low)||RD_ANY_STOP.test(x.low));
   const prose=x=>x.k==='p'&&!bad(x)&&x.plain.length>=80;
   const idx=[];items.forEach((x,i)=>{if(prose(x))idx.push(i)});
   let s=0,e=items.length-1;
@@ -2755,7 +2759,7 @@ function rdPick(items,title){
 }
 function rdFromMd(md){
   const L=String(md).replace(/\r/g,'').split('\n');let title='',started=false;const items=[];
-  if(/^Warning:.*returned error [45]\d\d/m.test(md))return{title:'',blocks:[],text:0};   /* sayfa yok / erişim reddi */
+  if(/^Warning:.*returned error [45]\d\d/m.test(md)||/^\s*\{\s*"data"\s*:\s*null/.test(md)||/"code"\s*:\s*4\d\d/.test(String(md).slice(0,300)))return{title:'',blocks:[],text:0};   /* hata gövdesi (ör. hız sınırı) */
   for(const l of L){
     if(!started){
       const m=l.match(/^Title:\s*(.+)/);if(m){title=m[1].trim();continue}
@@ -2807,7 +2811,9 @@ function rdFetch(url){
   if(RD_INF.has(url))return RD_INF.get(url);
   const ok=a=>{if(!a||(a.text<120&&a.blocks.length<4))throw new Error('kısa');return a};
   const jina=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),16000);
-    try{const r=await fetch('https://r.jina.ai/'+url,{signal:c.signal,headers:{'X-Return-Format':'markdown'}});if(!r.ok)throw new Error(r.status);return rdFromMd(await r.text())}finally{clearTimeout(t)}};
+    try{const go=()=>fetch('https://r.jina.ai/'+url,{signal:c.signal,headers:{'X-Return-Format':'markdown'}});
+      let r=await go();if(r.status===429){await new Promise(x=>setTimeout(x,1600));r=await go()}   /* r.jina.ai IP başına hız sınırı: bir kez daha dene */
+      if(!r.ok)throw new Error(r.status);return rdFromMd(await r.text())}finally{clearTimeout(t)}};
   const raw=async()=>rdFromHtml(await viaProxy(url));
   const p=Promise.any([jina().then(ok),raw().then(ok)]).then(art=>{
     RD_CACHE.set(url,art);if(RD_CACHE.size>30)RD_CACHE.delete(RD_CACHE.keys().next().value);rdStore(url,art);return art;
@@ -2825,15 +2831,24 @@ document.addEventListener('touchstart',e=>{
   const a=e.target.closest&&e.target.closest('a.nw-i[data-rd="1"],a.tk-i[data-rd="1"]');if(!a)return;
   const u=rdUrl(a);if(u&&!rdCached(u))rdFetch(u).catch(()=>{});
 },{passive:true});
-const rdTimers=new WeakMap();
+const rdTimers=new WeakMap(),rdQ=[];let rdQrun=false;
+/* Tüm listelerin ısıtma istekleri tek sıradan, aralıklı gider (r.jina.ai ücretsiz katmanı IP başına dakikada ~20 istek sınırlar). */
+async function rdQRun(){
+  if(rdQrun)return;rdQrun=true;
+  while(rdQ.length){
+    if(!rdWarmOK()){rdQ.length=0;break}
+    const u=rdQ.shift();if(rdCached(u))continue;
+    try{await rdFetch(u)}catch{}
+    await new Promise(r=>setTimeout(r,3500));
+  }
+  rdQrun=false;
+}
 function rdWarm(list){
   clearTimeout(rdTimers.get(list));
-  rdTimers.set(list,setTimeout(async()=>{
-    for(const a of [...list.querySelectorAll('a.nw-i[data-rd="1"]')].slice(0,2)){
-      if(!rdWarmOK()||!list.isConnected||list.offsetParent===null)return;
-      const u=rdUrl(a);
-      if(u&&!rdCached(u)){try{await rdFetch(u)}catch{}await new Promise(r=>setTimeout(r,3000))}
-    }
+  rdTimers.set(list,setTimeout(()=>{
+    if(!rdWarmOK()||!list.isConnected||list.offsetParent===null)return;
+    for(const a of [...list.querySelectorAll('a.nw-i[data-rd="1"]')].slice(0,2)){const u=rdUrl(a);if(u&&!rdCached(u)&&!rdQ.includes(u))rdQ.push(u)}
+    rdQRun();
   },4000));
 }
 const rdUrl=a=>safeUrl(a.dataset.rdUrl||a.getAttribute('href'));
