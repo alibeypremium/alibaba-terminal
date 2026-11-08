@@ -32,10 +32,18 @@ export function parse(html, c) {
         ext = u.href;
       });
     }
+    // Mesajın ilk görseli: fotoğraf, video kapağı ya da bağlantı önizlemesi (arka plan resmi olarak verilir).
+    let img = '';
+    m.find('.tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb, .link_preview_image, .link_preview_right_image').each((_, n) => {
+      if (img) return;
+      const mm = ($(n).attr('style') || '').match(/url\(\s*['"]?([^'")]+)/);
+      if (mm && /^https:\/\//.test(mm[1])) img = mm[1];
+    });
     out.push({
       title: (title || 'Medya mesajı').slice(0, 400),
       link: 'https://t.me/' + post,
       ext,
+      img,
       cat: c.cat,
       date: m.find('.tgme_widget_message_date time').attr('datetime') || '',
       source: c.name,
