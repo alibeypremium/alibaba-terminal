@@ -394,7 +394,8 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-x:hover{background:rgba(127,127,127,.38)}
 .rdr-d{flex:1;min-width:0;font:600 11px var(--font);color:var(--t2);text-transform:uppercase;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rdr-g,.rdr-btn{font:600 11.5px var(--font);color:var(--acc);text-decoration:none;white-space:nowrap}
-.rdr-c{flex:1;min-height:0;overflow:auto;padding:10px 2px 4px}
+.rdr-c{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;padding:10px 2px 4px}
+.rdr-c *{max-width:100%}
 .rdr-t{margin:0 0 8px;font-size:clamp(17px,5cqw,24px);line-height:1.22;font-weight:700;letter-spacing:-.01em}
 .rdr-im{display:block;width:100%;max-height:44cqh;object-fit:cover;border-radius:10px;margin:4px 0 10px;background:rgba(127,127,127,.18)}
 .rdr-c p,.rdr-c li{font-size:clamp(13.5px,3.7cqw,16px);line-height:1.55;margin:0 0 .85em}
@@ -2737,10 +2738,10 @@ function rdFromMd(md){
     const plain=t.replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\*\*|__|`/g,'').replace(/^#{1,4}\s+/,'').replace(/^\s*(?:[*+-]|\d+\.)\s+/,'').replace(/^\s*>\s?/,'').trim();
     if(!plain)continue;
     if(RD_STOP.test(t.toLocaleLowerCase('tr'))&&text>150)break;
-    if(lt/plain.length>.6&&plain.length<140)continue;   /* bağlantı listesi (menü) */
+    if(lt/plain.length>.5)continue;   /* bağlantı listesi (menü) */
     if(RD_JUNK.test(plain.toLocaleLowerCase('tr')))continue;
     if(isH){if(text>0&&plain!==title)blocks.push({k:'h',v:plain})}
-    else if(plain.length>=40||(isLi&&plain.length>=25)){blocks.push({k:isLi?'li':'p',v:plain});text+=plain.length}
+    else if(plain.length>=(text>0?(isLi?6:25):40)){blocks.push({k:isLi?'li':'p',v:plain});text+=plain.length}
   }
   while(blocks.length&&blocks[blocks.length-1].k==='h')blocks.pop();
   return{title,blocks,text};
@@ -2755,11 +2756,12 @@ function rdFromHtml(html){
   const blocks=[];let text=0,last='';
   if(box)for(const el of box.querySelectorAll('p,h2,h3,li')){
     const v=el.textContent.replace(/\s+/g,' ').trim();if(!v||v===last)continue;
+    const lk=[...el.querySelectorAll('a')].reduce((n,x)=>n+x.textContent.trim().length,0);if(lk/v.length>.5)continue;
     if(RD_STOP.test(v.toLocaleLowerCase('tr'))&&text>150)break;
     if(RD_JUNK.test(v.toLocaleLowerCase('tr')))continue;
     const n=el.tagName;
     if(n==='H2'||n==='H3'){if(text>0&&v.length<120)blocks.push({k:'h',v});}
-    else if(v.length>=40){blocks.push({k:n==='LI'?'li':'p',v});text+=v.length}
+    else if(v.length>=(text>0?(n==='LI'?6:25):40)){blocks.push({k:n==='LI'?'li':'p',v});text+=v.length}
     last=v;
   }
   while(blocks.length&&blocks[blocks.length-1].k==='h')blocks.pop();
@@ -2781,7 +2783,7 @@ function rdCached(url){
 function rdFetch(url){
   const hit=rdCached(url);if(hit)return Promise.resolve(hit);
   if(RD_INF.has(url))return RD_INF.get(url);
-  const ok=a=>{if(!a||a.text<250)throw new Error('kısa');return a};
+  const ok=a=>{if(!a||(a.text<120&&a.blocks.length<4))throw new Error('kısa');return a};
   const jina=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),16000);
     try{const r=await fetch('https://r.jina.ai/'+url,{signal:c.signal,headers:{'X-Return-Format':'markdown'}});if(!r.ok)throw new Error(r.status);return rdFromMd(await r.text())}finally{clearTimeout(t)}};
   const raw=async()=>rdFromHtml(await viaProxy(url));
