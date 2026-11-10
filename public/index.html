@@ -2072,7 +2072,7 @@ function paintRight(){
   /* Hava çipi ve ms çipi ayrı, kalıcı öğelerdir: ms çipi yeniden oluşturulmaz, açılan kutu ekranda kalır. */
   const box=$('#sbR');
   let wxBox=$('#sbWxBox',box),ms=$('#sbMs',box);
-  if(!wxBox){box.innerHTML='<span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-ms" id="sbMs" tabindex="0" aria-describedby="sbTip">'+BOLT.replace('%C%','')+'<b></b><span class="sb-v">ms</span><span class="sb-tip" id="sbTip" role="tooltip"><div></div></span></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
+  if(!wxBox){box.innerHTML='<span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-ms" id="sbMs" tabindex="-1">'+BOLT.replace('%C%','')+'<b></b></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
   if(r!==lastRight){lastRight=r;wxBox.innerHTML=r}
   const m=TK.ms?TK.ms.ms:undefined,ok=typeof m==='number',c=!ok?(m===null?' err':''):m<200?'':m<500?' warn':' err';
   $('.sb-bolt',ms).setAttribute('class','sb-bolt'+c);
@@ -2726,6 +2726,8 @@ const RD_FOOT=/©|™|®|tüm hakları|all rights reserved|warnermedia|holding a
 const RD_ANY_STOP=/(en çok|çok) (okunan|izlenen|paylaşılan|yorumlanan)|ilginizi çekebilir|benzer (haber|içerik)|önerilen (haber|içerik)|diğer haberler|ilgili haberler|bunları da (oku|izle)|sıradaki haber/;
 const RD_COOKIE=/tanımlama bilgi|çerez|cookie|ziyaret ettiğinizde|tercihlerinizi|aydınlatma metni|gizlilik politikası|kişisel verilerinizi/i;
 const RD_DATE=/\b20\d\d\b.*\b\d{1,2}[:.]\d{2}\b/;
+const RD_BOT=/just a moment|verif(y|ies) (that )?you are not a bot|checking your browser|attention required|enable javascript and cookies|security service to protect|güvenlik doğrulaması|bir dakika lütfen/i;
+const rdBot=a=>!!a&&(RD_BOT.test(a.title||'')||(a.blocks||[]).slice(0,3).some(b=>b.k!=='img'&&RD_BOT.test(b.v)));
 function rdPick(items,title){
   const t40=title.slice(0,40).toLocaleLowerCase('tr');
   const glue=x=>{const n=(x.plain.match(/[a-zçğıöşü][A-ZÇĞİÖŞÜ]/g)||[]).length;return n>=3&&n/x.plain.length>.02};   /* boşluksuz yapışık menü yazısı */
@@ -2812,13 +2814,13 @@ function rdStore(url,art){
 function rdCached(url){
   if(RD_CACHE.has(url))return RD_CACHE.get(url);
   const e=LS.get(RD_KEY,{})[url];
-  if(e&&Date.now()-e.t<RD_TTL){RD_CACHE.set(url,e.a);return e.a}
+  if(e&&Date.now()-e.t<RD_TTL&&!rdBot(e.a)){RD_CACHE.set(url,e.a);return e.a}
   return null;
 }
 function rdFetch(url){
   const hit=rdCached(url);if(hit)return Promise.resolve(hit);
   if(RD_INF.has(url))return RD_INF.get(url);
-  const ok=a=>{if(!a||(a.text<120&&a.blocks.length<4))throw new Error('kısa');return a};
+  const ok=a=>{if(!a||rdBot(a)||(a.text<120&&a.blocks.length<4))throw new Error('kısa');return a};
   const jina=async()=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),16000);
     try{const go=()=>fetch('https://r.jina.ai/'+url,{signal:c.signal,headers:{'X-Return-Format':'markdown'}});
       let r=await go();if(r.status===429){await new Promise(x=>setTimeout(x,1600));r=await go()}   /* r.jina.ai IP başına hız sınırı: bir kez daha dene */
@@ -3770,7 +3772,7 @@ grid.addEventListener('click',e=>{
 let lp=null;
 grid.addEventListener('pointerdown',e=>{
   if(body.classList.contains('editing'))return;
-  if(e.target.closest('input,textarea,button,a,iframe,.yt-view'))return;
+  if(e.button||e.target.closest('input,textarea,button,a,iframe,.yt-view'))return;   /* sağ/orta tık düzenlemeyi açmaz */
   const x=e.clientX,y=e.clientY;
   lp=setTimeout(()=>edit(true),650);
   const cancel=ev=>{if(ev.type==='pointerup'||ev.type==='pointercancel'||Math.hypot(ev.clientX-x,ev.clientY-y)>10){clearTimeout(lp);window.removeEventListener('pointermove',cancel);window.removeEventListener('pointerup',cancel);window.removeEventListener('pointercancel',cancel)}};
