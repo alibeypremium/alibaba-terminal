@@ -396,18 +396,36 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-g,.rdr-btn{font:600 11.5px var(--font);color:var(--acc);text-decoration:none;white-space:nowrap}
 .rdr-c{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;padding:10px 2px 4px}
 .rdr-c *{max-width:100%}
-.wov{position:absolute;inset:0;z-index:20;display:flex;animation:wovIn .15s ease-out;cursor:pointer}
+.wov{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;gap:8px;padding:clamp(12px,5.2cqw,18px);animation:wovIn .15s ease-out;cursor:pointer}
+.wov .hd{gap:9px}
+.wov-sub{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:62%;text-align:right}
+.wov-x{flex:none;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:10px;line-height:1;color:var(--t)}
+@container (max-width:340px){.wov-sub{display:none}}
+@container (max-height:140px){.wov{gap:5px;padding:10px 12px}.wov .hd{min-height:22px}.wov .logo{width:22px;height:22px}.wov .logo svg{width:14px;height:14px}.wov-g{gap:4px!important}.wov-g .pt{padding:3px 6px}}
 @keyframes wovIn{from{opacity:0}to{opacity:1}}
 .wov-on>.pr,.wov-on>.wx{visibility:hidden}
 .wov-g{flex:1;min-width:0;min-height:0;display:grid;gap:6px;grid-auto-rows:minmax(0,1fr)}
 .wov-g.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.wov-g.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
-.wov-g .pt{justify-content:center;min-width:0;overflow:hidden}
+.wov-g .pt{justify-content:center;min-width:0;overflow:hidden;border-radius:12px}
 .wov-g .pt b{font-size:clamp(13px,4.6cqw,19px);white-space:nowrap}
 .wov-g .pt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wov-g .pt small{font-size:10.5px;opacity:.75;white-space:nowrap}
 .wov-g .pt svg{width:clamp(18px,6cqw,26px);height:clamp(18px,6cqw,26px)}
 .wov-g .pt.next{background:#f3d98a;color:#3a2c08}.wov-g .pt.next span{color:rgba(58,44,8,.72)}
 .wov-d{align-items:center;text-align:center}
+.wov-w{display:flex;align-items:center;justify-content:space-between;gap:2px;width:100%;min-width:0}
+.wov-w svg{display:none}
+@container (min-width:300px){.wov-w svg{display:block}}
+.wov .ttl{flex:none}
+.wov-d{align-items:flex-start;text-align:left}
+.wov-w b small{margin-left:3px}
+.wov-g .pt{gap:0;line-height:1.15;padding:4px 8px}
+.wov-g .pt span{font-size:10.5px}
+.wov-g .pt b{font-size:clamp(14px,5cqw,20px)}
+.wov-g .wov-d{padding:4px 3px}
+.wov-g .wov-w svg{width:clamp(17px,5.6cqw,26px);height:clamp(17px,5.6cqw,26px)}
+.wov-g .wov-d b{font-size:clamp(13px,4.4cqw,18px)}
+@container (max-height:150px){.wov-g .pt{padding:2px 8px}.wov-g .pt b{font-size:clamp(13px,4.3cqw,17px)}.wov-g .wov-d{padding:2px 5px}}
 .wov-pp{display:none}
 @container (min-width:330px) and (min-height:200px){.wov-pp{display:block}}
 .pr,.wx{cursor:pointer}
@@ -1022,34 +1040,34 @@ function wxIcon(code,day){
 function skyOf(code,day){const k=(WX[code]||['','cloud'])[1];if(k==='storm')return'storm';if(k==='snow')return'snow';if(k==='rain')return'rain';if(!day)return'night';if(k==='cloud'||k==='fog')return'cloud';return'day'}
 
 /* Widget içi açılır panel (popup gibi, ama widget'ın içinde): × / Esc ile kapanır, düzenleme modunda açılmaz. */
-function wPanel(w,root,onOpen){
+function wPanel(w,root,kind,title,onOpen){
   let ov=null;
   const close=()=>{if(!ov)return;ov.remove();ov=null;root.classList.remove('wov-on');document.removeEventListener('keydown',onKey,true)};
   const onKey=e=>{if(e.key==='Escape'&&ov){e.stopPropagation();close()}};
   const open=()=>{
     if(ov||document.body.classList.contains('editing'))return;
     ov=document.createElement('div');ov.className='wov';ov.title='Kapatmak için tıkla';
-    ov.innerHTML='<div class="wov-g"></div>';
+    ov.innerHTML='<div class="hd">'+logo(kind)+'<span class="ttl">'+esc(title)+'</span><span class="sp"></span><span class="wov-sub"></span><i class="wov-x" aria-hidden="true">✕</i></div><div class="wov-g"></div>';
     ov.addEventListener('click',close);
     root.classList.add('wov-on');root.appendChild(ov);document.addEventListener('keydown',onKey,true);onOpen&&onOpen();
   };
   root.addEventListener('click',e=>{if(e.target.closest('button,a,input,select,textarea,.wov'))return;open()});
   const prevD=w._dispose;w._dispose=()=>{close();prevD&&prevD()};
-  return{set(cols,html){if(!ov)return false;const g=$('.wov-g',ov);g.className='wov-g c'+cols;if(g._h!==html){g._h=html;g.innerHTML=html}return true},get open(){return!!ov},close};
+  return{set(cols,html,sub){if(!ov)return false;$('.wov-sub',ov).textContent=sub||'';const g=$('.wov-g',ov);g.className='wov-g c'+cols;if(g._h!==html){g._h=html;g.innerHTML=html}return true},get open(){return!!ov},close};
 }
 function mountWeather(w,root){
   root.innerHTML='<div class="wx"></div>';
   const box=$('.wx',root);
   let lastJ=null;
-  const week=wPanel(w,root,()=>paintWeek());
+  const week=wPanel(w,root,'weather','7 günlük hava',()=>paintWeek());
   const paintWeek=()=>{
     const j=lastJ;if(!j||!week.open)return;
     const d=j.daily,n=Math.min(7,d.time.length);
     const tiles=d.time.slice(0,n).map((t,i)=>{
       const nm=i?new Date(t+'T12:00').toLocaleDateString('tr-TR',{weekday:'short'}):'Bugün',pp=d.precipitation_probability_max&&d.precipitation_probability_max[i];
-      return'<div class="pt wov-d'+(i===0?' next':'')+'"><span>'+esc(nm)+'</span>'+wxIcon(d.weather_code[i],1)+'<b>'+Math.round(d.temperature_2m_max[i])+'° <small>'+Math.round(d.temperature_2m_min[i])+'°</small></b>'+(pp>=10?'<small class="wov-pp">💧'+Math.round(pp)+'%</small>':'')+'</div>';
-    }).join('')+'<div class="pt wov-d"><span>'+esc(place.name.split(',')[0])+'</span><small>7 gün</small></div>';
-    week.set(4,tiles);
+      return'<div class="pt wov-d'+(i===0?' next':'')+'"><div class="wov-w"><span>'+esc(nm)+'</span>'+wxIcon(d.weather_code[i],1)+'</div><b>'+Math.round(d.temperature_2m_max[i])+'°<small>'+Math.round(d.temperature_2m_min[i])+'°</small></b>'+(pp>=10?'<small class="wov-pp">💧'+Math.round(pp)+'%</small>':'')+'</div>';
+    }).join('');
+    week.set(4,tiles,place.name.split(',')[0]);
   };
   const render=j=>{
     lastJ=j;
@@ -1137,11 +1155,12 @@ function religiousText(r){
 function mountPrayer(w,root){
   root.innerHTML='<div class="pr"><div class="hd">'+logo('prayer')+'<span class="ttl">Namaz Vakitleri</span><span class="sp"></span><span class="pr-hjw"><span class="pr-hj" id="hj"></span><span class="pr-ev" id="pev"></span></span></div><div class="pr-next"><div class="pr-nm" id="pnm">Yükleniyor…</div><div class="pr-cd" id="pcd">--:--:--</div></div><div class="pr-times" id="ptm"></div><div class="foot">Diyanet hesaplama yöntemi · '+'<span id="pcity"></span></div></div>';
   let data=null,secs=[],tz='Europe/Istanbul';
-  const day2=wPanel(w,root,()=>paintDay());
+  const day2=wPanel(w,root,'prayer','Namaz vakitleri',()=>paintDay());
   const paintDay=()=>{
     if(!data||!day2.open)return;
     const now=secsIn(tz),ni=secs.findIndex(s=>s>now);
-    day2.set(3,PRAYERS.map((p,i)=>'<div class="pt'+(i===ni?' next':'')+(secs[i]<=now?' past':'')+'"><span>'+p[1]+'</span><b>'+data.timings[p[0]].match(/\d{1,2}:\d{2}/)[0]+'</b></div>').join(''));
+    const hj=data.date&&data.date.hijri,sub=new Intl.DateTimeFormat('tr-TR',{timeZone:tz,day:'numeric',month:'long',weekday:'long'}).format(new Date())+(hj&&innerWidth>0?'':'');
+    day2.set(3,PRAYERS.map((p,i)=>'<div class="pt'+(i===ni?' next':'')+(secs[i]<=now?' past':'')+'"><span>'+p[1]+'</span><b>'+data.timings[p[0]].match(/\d{1,2}:\d{2}/)[0]+'</b></div>').join(''),sub);
   };
   const draw=()=>{
     if(!data)return;
