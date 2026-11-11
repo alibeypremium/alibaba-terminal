@@ -396,28 +396,20 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .rdr-g,.rdr-btn{font:600 11.5px var(--font);color:var(--acc);text-decoration:none;white-space:nowrap}
 .rdr-c{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;padding:10px 2px 4px}
 .rdr-c *{max-width:100%}
-.wov{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;padding:10px 12px 8px;border-radius:inherit;background:rgba(14,16,26,.93);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#f2f4fa;animation:wovIn .18s ease-out}
-@keyframes wovIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
-.wov-h{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.14)}
-.wov-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
-.wov-t b{font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wov-t span{font-size:11px;color:rgba(242,244,250,.62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wov-x{appearance:none;border:0;flex:none;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14);color:inherit;font-size:15px;line-height:1;cursor:pointer}
-.wov-x:hover{background:rgba(255,255,255,.26)}
-.wov-c{flex:1;min-height:0;overflow-y:auto;padding-top:6px;scrollbar-width:thin}
-.wov-r{display:grid;grid-template-columns:minmax(64px,1.1fr) 26px 40px minmax(40px,1.4fr) auto;gap:8px;align-items:center;padding:5px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.07);font-variant-numeric:tabular-nums}
-.wov-r:last-child{border-bottom:0}
-.wov-r b{font-weight:600}.wov-r b small{display:block;font-weight:400;font-size:10.5px;color:rgba(242,244,250,.58)}
-.wov-r svg{width:24px;height:24px}
-.wov-r .pp{font-size:11.5px;color:#7fd1ff;text-align:right}
-.wov-r .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.2);position:relative;overflow:hidden}
-.wov-r .bar i{position:absolute;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,#7fd1ff,#ffd166)}
-.wov-r>span{color:rgba(242,244,250,.75);white-space:nowrap}
-.wov-p{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;margin:3px 0;border-radius:12px;background:rgba(255,255,255,.07);font-variant-numeric:tabular-nums}
-.wov-p span{font-size:13.5px}.wov-p b{font-size:17px;font-weight:600}
-.wov-p.past{opacity:.5}
-.wov-p.next{background:#b9a4ff;color:#241a4a}
-.wov-p.next small{margin-left:8px;font-size:11px;font-weight:600;opacity:.8}
+.wov{position:absolute;inset:0;z-index:20;display:flex;animation:wovIn .15s ease-out;cursor:pointer}
+@keyframes wovIn{from{opacity:0}to{opacity:1}}
+.wov-on>.pr,.wov-on>.wx{visibility:hidden}
+.wov-g{flex:1;min-width:0;min-height:0;display:grid;gap:6px;grid-auto-rows:minmax(0,1fr)}
+.wov-g.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.wov-g.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.wov-g .pt{justify-content:center;min-width:0;overflow:hidden}
+.wov-g .pt b{font-size:clamp(13px,4.6cqw,19px);white-space:nowrap}
+.wov-g .pt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wov-g .pt small{font-size:10.5px;opacity:.75;white-space:nowrap}
+.wov-g .pt svg{width:clamp(18px,6cqw,26px);height:clamp(18px,6cqw,26px)}
+.wov-g .pt.next{background:#f3d98a;color:#3a2c08}.wov-g .pt.next span{color:rgba(58,44,8,.72)}
+.wov-d{align-items:center;text-align:center}
+.wov-pp{display:none}
+@container (min-width:330px) and (min-height:200px){.wov-pp{display:block}}
 .pr,.wx{cursor:pointer}
 @container (max-width:330px){.wov-r{grid-template-columns:1fr 24px auto;gap:6px}.wov-r .bar,.wov-r .pp{display:none}.wov-p{padding:6px 9px}}
 .rdr-lead{font-size:1.02em;line-height:1.55;opacity:.92;margin:0 0 12px}
@@ -1032,18 +1024,18 @@ function skyOf(code,day){const k=(WX[code]||['','cloud'])[1];if(k==='storm')retu
 /* Widget içi açılır panel (popup gibi, ama widget'ın içinde): × / Esc ile kapanır, düzenleme modunda açılmaz. */
 function wPanel(w,root,onOpen){
   let ov=null;
-  const close=()=>{if(!ov)return;ov.remove();ov=null;document.removeEventListener('keydown',onKey,true)};
+  const close=()=>{if(!ov)return;ov.remove();ov=null;root.classList.remove('wov-on');document.removeEventListener('keydown',onKey,true)};
   const onKey=e=>{if(e.key==='Escape'&&ov){e.stopPropagation();close()}};
   const open=()=>{
     if(ov||document.body.classList.contains('editing'))return;
-    ov=document.createElement('div');ov.className='wov';
-    ov.innerHTML='<div class="wov-h"><div class="wov-t"><b></b><span></span></div><button type="button" class="wov-x" aria-label="Kapat" title="Kapat (Esc)">✕</button></div><div class="wov-c"></div>';
-    $('.wov-x',ov).onclick=e=>{e.stopPropagation();close()};
-    root.appendChild(ov);document.addEventListener('keydown',onKey,true);onOpen&&onOpen();
+    ov=document.createElement('div');ov.className='wov';ov.title='Kapatmak için tıkla';
+    ov.innerHTML='<div class="wov-g"></div>';
+    ov.addEventListener('click',close);
+    root.classList.add('wov-on');root.appendChild(ov);document.addEventListener('keydown',onKey,true);onOpen&&onOpen();
   };
   root.addEventListener('click',e=>{if(e.target.closest('button,a,input,select,textarea,.wov'))return;open()});
   const prevD=w._dispose;w._dispose=()=>{close();prevD&&prevD()};
-  return{set(t,s,html){if(!ov)return false;$('.wov-t b',ov).textContent=t;$('.wov-t span',ov).textContent=s||'';const c=$('.wov-c',ov);if(c._h!==html){c._h=html;c.innerHTML=html}return true},get open(){return!!ov},close};
+  return{set(cols,html){if(!ov)return false;const g=$('.wov-g',ov);g.className='wov-g c'+cols;if(g._h!==html){g._h=html;g.innerHTML=html}return true},get open(){return!!ov},close};
 }
 function mountWeather(w,root){
   root.innerHTML='<div class="wx"></div>';
@@ -1052,13 +1044,12 @@ function mountWeather(w,root){
   const week=wPanel(w,root,()=>paintWeek());
   const paintWeek=()=>{
     const j=lastJ;if(!j||!week.open)return;
-    const d=j.daily,n=Math.min(7,d.time.length),lo=Math.min(...d.temperature_2m_min.slice(0,n)),hi=Math.max(...d.temperature_2m_max.slice(0,n)),span=Math.max(1,hi-lo);
-    const rows=d.time.slice(0,n).map((t,i)=>{
-      const dt=new Date(t+'T12:00'),nm=i?dt.toLocaleDateString('tr-TR',{weekday:'long'}):'Bugün',dm=dt.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
-      const a=d.temperature_2m_min[i],b=d.temperature_2m_max[i],pp=d.precipitation_probability_max&&d.precipitation_probability_max[i];
-      return'<div class="wov-r"><b>'+esc(nm)+'<small>'+esc(dm+' · '+((WX[d.weather_code[i]]||['—'])[0]))+'</small></b>'+wxIcon(d.weather_code[i],1)+'<em class="pp" style="font-style:normal">'+(pp>=10?'💧'+Math.round(pp)+'%':'')+'</em><div class="bar"><i style="left:'+((a-lo)/span*100)+'%;right:'+(100-(b-lo)/span*100)+'%"></i></div><span>'+Math.round(a)+'° / '+Math.round(b)+'°</span></div>';
-    }).join('');
-    week.set('Haftalık hava durumu',place.name.split(',')[0],rows);
+    const d=j.daily,n=Math.min(7,d.time.length);
+    const tiles=d.time.slice(0,n).map((t,i)=>{
+      const nm=i?new Date(t+'T12:00').toLocaleDateString('tr-TR',{weekday:'short'}):'Bugün',pp=d.precipitation_probability_max&&d.precipitation_probability_max[i];
+      return'<div class="pt wov-d'+(i===0?' next':'')+'"><span>'+esc(nm)+'</span>'+wxIcon(d.weather_code[i],1)+'<b>'+Math.round(d.temperature_2m_max[i])+'° <small>'+Math.round(d.temperature_2m_min[i])+'°</small></b>'+(pp>=10?'<small class="wov-pp">💧'+Math.round(pp)+'%</small>':'')+'</div>';
+    }).join('')+'<div class="pt wov-d"><span>'+esc(place.name.split(',')[0])+'</span><small>7 gün</small></div>';
+    week.set(4,tiles);
   };
   const render=j=>{
     lastJ=j;
@@ -1150,13 +1141,7 @@ function mountPrayer(w,root){
   const paintDay=()=>{
     if(!data||!day2.open)return;
     const now=secsIn(tz),ni=secs.findIndex(s=>s>now);
-    const h=data.date&&data.date.hijri;
-    const rows=PRAYERS.map((p,i)=>{
-      const t=data.timings[p[0]].match(/\d{1,2}:\d{2}/)[0],nx=i===ni,rem=secs[i]-now;
-      return'<div class="wov-p'+(nx?' next':'')+(secs[i]<=now?' past':'')+'"><span>'+PRAYER_LABEL[i].replace(' Namazı','')+(i===1?'':'')+(nx?'<small>'+Math.floor(rem/3600)+' sa '+String(Math.floor(rem%3600/60)).padStart(2,'0')+' dk kaldı</small>':'')+'</span><b>'+t+'</b></div>';
-    }).join('');
-    const dateTxt=new Intl.DateTimeFormat('tr-TR',{timeZone:tz,day:'numeric',month:'long',weekday:'long'}).format(new Date())+(h?' · '+h.day+' '+(HIJRI[(+h.month.number)-1]||'')+' '+h.year:'');
-    day2.set('Günün namaz vakitleri',place.name.split(',')[0]+' · '+dateTxt,rows);
+    day2.set(3,PRAYERS.map((p,i)=>'<div class="pt'+(i===ni?' next':'')+(secs[i]<=now?' past':'')+'"><span>'+p[1]+'</span><b>'+data.timings[p[0]].match(/\d{1,2}:\d{2}/)[0]+'</b></div>').join(''));
   };
   const draw=()=>{
     if(!data)return;
