@@ -2681,7 +2681,7 @@ const psImg=im=>im?PS_IMG+im+'?w=360':'';
 const psAgo=t=>{const m=Math.max(0,Math.round((Date.now()-Date.parse(t))/6e4));return m<90?m+' dk önce':Math.round(m/60)+' sa önce'};
 /* Katalog satırı → kart. r: {id,n,now,base,im,pl,pre} */
 const psItem=r=>{const pc=psPct(r);return{id:r.id,title:r.n,img:psImg(r.im),url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(r.id),
-  badge:pc?'-%'+pc:(r.pre?'Ön sipariş':''),sub:!r.base?'Fiyat yok':pc?psTL(r.now)+' · eski '+psTL(r.base):psTL(r.now),pc}};
+  date:r.d||'',badge:pc?'-%'+pc:(r.pre&&!r.d?'Ön sipariş':''),sub:!r.base?'Fiyat yok':pc?psTL(r.now)+' · eski '+psTL(r.base):psTL(r.now)+(r.pre?' · ön sipariş':''),pc}};
 const psTr=t=>String(t).toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
 async function psCatalog(){const j=await psFile('ps-all.json',6*3600e3);
   if(!j._m){j._m=new Map();(j.g||[]).forEach(a=>j._m.set(a[0],{id:a[0],n:a[1],now:a[2],base:a[3],im:a[4],pl:a[5],k:psTr(a[1])}))}return j}

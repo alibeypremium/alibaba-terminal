@@ -105,6 +105,17 @@ async function main() {
     }
   }
   soon.length = Math.min(soon.length, SOON_MAX);
+  // Çıkış tarihi: kategori verisinde yok; ürün sayfasındaki __NEXT_DATA__ içinde "releaseDate" var (TR saatine göre gün)
+  await pool(soon, 4, async (r) => {
+    try {
+      const x = await fetch(BASE + '/tr-tr/product/' + encodeURIComponent(r.id), { headers: { 'user-agent': UA, 'accept-language': 'tr-TR' }, signal: AbortSignal.timeout(20000) });
+      const t = await x.text();
+      const m = t.match(/"releaseDate":"(\d{4}-\d{2}-\d{2}T[\d:]+Z)"/);
+      if (m) r.d = new Date(Date.parse(m[1]) + 3 * 3600e3).toISOString().slice(0, 10);
+    } catch (e) { console.log('tarih hata', r.id, e.message); }
+  });
+  soon.sort((a, b) => (a.d ? 0 : 1) - (b.d ? 0 : 1) || (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+  console.log('tarihli:', soon.filter((r) => r.d).length);
   console.log('yakında:', soon.length);
 
   if (deals.length || soon.length) {
