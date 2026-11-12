@@ -11,7 +11,7 @@ page.on('pageerror', (e) => problems.push('sayfa hatası: ' + e.message));
 page.on('response', (r) => { const u = r.url(); if (u.startsWith(url) && r.status() >= 400) problems.push(r.status() + ' ' + u); });
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForTimeout(7000);
-const w = await page.evaluate(() => [...document.querySelectorAll('.w')].filter((x) => x.getBoundingClientRect().width > 0).map((x) => [x.dataset.id, x.innerText.trim().length]));
+const w = await page.evaluate(() => [...document.querySelectorAll('.w')].filter((x) => x.getBoundingClientRect().width > 0).map((x) => [x.dataset.id, x.innerText.trim().length + 10 * x.querySelectorAll('button,svg,img,canvas,iframe').length]));
 console.log('görünen widget:', w.length, w.map((x) => x.join(':')).join(' '));
 if (w.length < 8) problems.push('çok az widget görünüyor: ' + w.length);
 const empty = w.filter(([, n]) => n < 3).map(([id]) => id);
