@@ -3664,7 +3664,7 @@ function openBackup(){
   const prev=document.activeElement;
   const ov=document.createElement('div');ov.className='bk-ov';
   ov.innerHTML='<div class="bk" role="dialog" aria-modal="true" aria-labelledby="bkT"><h3 id="bkT">Yedekle ve aktar</h3>'+
-    '<p>Notların, kanal listelerin, ayarların ve yerleşimin tek bir dosyaya yazılır. Başka bir cihaza ya da yeni bir adrese taşımak için kullanılır.</p>'+
+    '<p>Notların, kanal listelerin, PlayStation istek listen, ayarların ve yerleşimin tek bir dosyaya yazılır. Başka bir cihaza ya da yeni bir adrese taşımak için kullanılır.</p>'+
     '<label class="bk-ck"><input type="checkbox" id="bkKeys"><span>API anahtarlarını da ekle. Dosyayı o zaman gizli tut.</span></label>'+
     '<div class="bk-row"><button type="button" class="bk-b on" id="bkDl">Yedeği indir</button><button type="button" class="bk-b" id="bkUp">Yedeği yükle</button></div>'+
     '<input type="file" id="bkFile" accept=".json,application/json" hidden>'+
@@ -3848,7 +3848,7 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  daily:{title:'Ayet · Hadis · Esma',def:[3,1],mount:mountDaily},
  events:{title:'FİLMLER',def:[3,2],mount:mountEvents},
  games:{title:'Oyunlar',def:[3,2],mount:mountGames},
- ps:{title:'PLAYSTATION',def:[3,3],mount:mountPS},
+ ps:{title:'PLAYSTATION',def:[3,2],mount:mountPS},
  weather:{title:'Hava Durumu',def:[2,1],mount:mountWeather},
  controls:{title:'Kontrol',def:[1,1],mount:mountControls},
  radio:{title:'Radyo',def:[3,1],mount:mountRadio},
@@ -3857,9 +3857,10 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
 };
 const PRESETS={XS:[2,1],S:[2,2],M:[3,2],L:[4,3],XL:[6,4]};
 const grid=$('#grid');
-const defaultLayout=()=>Object.keys(REG).map(id=>({id,w:REG[id].def[0],h:REG[id].def[1],hidden:!!REG[id].hide}));
+const defaultLayout=()=>Object.keys(REG).map(id=>({id,w:REG[id].def[0],h:REG[id].def[1],hidden:!!REG[id].hide||id==='games'}));   /* varsayılan düzen: 12 sütun; Oyunlar widget'ı varsayılan olarak kapalı, PlayStation 3×2 */
 let layout=LS.get('pano.layout.v3',null);
-if(!Array.isArray(layout))layout=defaultLayout();
+const freshLayout=!Array.isArray(layout);
+if(freshLayout){layout=defaultLayout();LS.set('pano.controls.size',1);LS.set('pano.ps.size',2)}   /* yeni kurulumda tek seferlik boyut göçleri atlanır */
 layout=layout.map(l=>l&&l.id==='kantan'?{...l,id:'tech'}:l);   /* eski Kantan widget'ının yerini ve boyutunu koru */
 layout=layout.filter(l=>REG[l.id]);
 try{Object.keys(localStorage).filter(k=>k.startsWith('pano.fb.')||k.startsWith('pano.x.')).forEach(k=>localStorage.removeItem(k))}catch{}   /* kaldırılan Futbol ve X widget'larının eski kayıtları */
