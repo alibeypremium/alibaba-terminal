@@ -11,15 +11,17 @@ jobs:
         run: |
           cat > d.mjs <<'EOF'
           const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-          const r=await fetch('https://store.playstation.com/tr-tr/category/3f772501-f6f8-49b7-abac-874a88ca4897/1',{headers:{'user-agent':UA,'accept-language':'tr-TR,tr;q=0.9'}});
-          const t=await r.text();
-          console.log('len',t.length,'nextdata',/__NEXT_DATA__/.test(t),'basePrice',(t.match(/basePrice/g)||[]).length,'discountedPrice',(t.match(/discountedPrice/g)||[]).length);
-          const m=t.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-          if(m){const j=JSON.parse(m[1]);console.log('top',Object.keys(j),'props',Object.keys(j.props||{}),'pageProps',Object.keys((j.props||{}).pageProps||{}));
-            const ap=j.props&&j.props.apolloState;if(ap){const ks=Object.keys(ap);console.log('apollo keys',ks.length);const tc={};ks.forEach(k=>{const a=k.split(':')[0];tc[a]=(tc[a]||0)+1});console.log(JSON.stringify(tc));
-              const pk=ks.find(k=>/^Product:/.test(k));if(pk)console.log('sample',pk,JSON.stringify(ap[pk]).slice(0,900));
-              const ck=ks.find(k=>/^Concept:/.test(k));if(ck)console.log('sampleC',ck,JSON.stringify(ap[ck]).slice(0,900));}}
-          let i=t.indexOf('basePrice');for(let n=0;n<2&&i>=0;n++){console.log('CTX',t.slice(Math.max(0,i-300),i+300).replace(/\s+/g,' '));i=t.indexOf('basePrice',i+1)}
-          const sc=[...t.matchAll(/<script[^>]*?(?: id="([^"]+)")?[^>]*>/g)].map(x=>x[1]).filter(Boolean);console.log('script ids',sc.slice(0,15));
+          const H=['9845afc0dbaab4965f6563fffc703f588c8e76792000e8610843b8d3ee9c4c09'];
+          const cat='3f772501-f6f8-49b7-abac-874a88ca4897';
+          for(const h of H){
+            const vars={id:cat,pageArgs:{size:24,offset:0},sortBy:null,filterBy:[],facetOptions:[]};
+            const ext={persistedQuery:{version:1,sha256Hash:h}};
+            const u='https://web.np.playstation.com/api/graphql/v1/op?operationName=categoryGridRetrieve&variables='+encodeURIComponent(JSON.stringify(vars))+'&extensions='+encodeURIComponent(JSON.stringify(ext));
+            const r=await fetch(u,{headers:{'user-agent':UA,'accept':'application/json','content-type':'application/json','x-psn-store-locale-override':'tr-TR','origin':'https://store.playstation.com','referer':'https://store.playstation.com/','accept-language':'tr-TR,tr;q=0.9'}});
+            const t=await r.text();console.log('API',r.status,t.length,t.slice(0,1500).replace(/\s+/g,' '));
+          }
+          const r2=await fetch('https://store.playstation.com/tr-tr/pages/deals',{headers:{'user-agent':UA,'accept-language':'tr-TR,tr;q=0.9'}});
+          const t2=await r2.text();const ids=[...new Set([...t2.matchAll(/\/category\/([0-9a-f-]{36})/g)].map(x=>x[1]))];console.log('deals kategori',ids.length,ids.slice(0,12).join(' '));
+          const bt=t2.match(/"batarangs":\{[\s\S]{0,600}/);console.log('batarangs',bt?bt[0].replace(/\s+/g,' ').slice(0,600):'yok');
           EOF
           node d.mjs
