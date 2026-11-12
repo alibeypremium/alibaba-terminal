@@ -756,14 +756,16 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 /* Yeni oyunlar / film ve etkinlik */
 .w[data-id=ps]{--w-bg:radial-gradient(circle at 92% -5%,rgba(0,168,255,.45),transparent 55%),linear-gradient(160deg,rgba(0,74,170,.97),rgba(4,18,64,.98));--acc:#4fc3ff}
 .w[data-id=ps] [data-a=key]{display:none}
-/* Yatay mini kart düzeni (PlayStation, Filmler): solda dikey afiş, sağda ad + bilgi; 3 kart yan yana */
-.cv.h{gap:10px 12px;align-content:start}
-.cv.h .cv-c{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:1fr auto auto 1fr;column-gap:9px;row-gap:3px}
-.cv.h .cv-img{grid-row:1/5;height:100%;max-height:118px;width:auto;aspect-ratio:2/3;align-self:center}
-.cv.h .cv-t{grid-row:2;grid-column:2;align-self:end;font-size:12px;-webkit-line-clamp:4}
-.cv.h .cv-s{grid-row:3;grid-column:2;align-self:start;white-space:normal;margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.cv.h .cv-t,.cv.h .cv-s{display:-webkit-box}
-.cv.h .cv-date{left:4px;top:4px;padding:1px 6px;font-size:9.5px}
+/* Kapak kart düzeni (PlayStation, Filmler): afiş kartı doldurur, ad ve bilgi altta, afişin üstünde */
+.cv.h{gap:10px;align-content:start}
+.cv.h .cv-c{position:relative;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;padding:0 10px 9px;border-radius:14px;overflow:hidden;isolation:isolate;box-shadow:0 10px 22px -10px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.14)}
+.cv.h .cv-c::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent 38%,rgba(6,10,28,.55) 66%,rgba(4,8,22,.92))}
+.cv.h .cv-img{position:absolute;inset:0;z-index:-1;height:100%;width:100%;max-height:none;aspect-ratio:auto;border-radius:0;box-shadow:none;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.cv.h .cv-c:hover .cv-img{transform:scale(1.06);box-shadow:none}
+.cv.h .cv-t,.cv.h .cv-s{position:relative;z-index:1;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.7);margin:0}
+.cv.h .cv-t{display:-webkit-box;-webkit-line-clamp:2;font-size:12.5px;line-height:1.22}
+.cv.h .cv-s{display:block;white-space:nowrap;font-size:11px;color:rgba(255,255,255,.82)}
+.cv.h .cv-date{z-index:1;left:7px;top:7px}
 .w[data-id=games]{--w-bg:radial-gradient(circle at 90% 0%,rgba(167,139,250,.32),transparent 55%),linear-gradient(160deg,rgba(54,22,112,.96),rgba(16,9,46,.98));--acc:#b79cff}
 .w[data-id=events]{--w-bg:radial-gradient(circle at 95% 0%,rgba(255,170,80,.3),transparent 55%),linear-gradient(160deg,rgba(120,50,16,.96),rgba(38,14,10,.98));--acc:#ffb454;--on:#3a1c08}
 .cvw .dv-tabs{margin-right:2px}
@@ -2663,7 +2665,7 @@ const PS_FEED='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/
 async function gamesPS(){
   const j=JSON.parse(await getText(PS_FEED+'?t='+Math.floor(Date.now()/6e5),12000));
   const items=(j.items||[]).filter(x=>x&&x.name&&safeUrl(x.url)).map(x=>({title:x.name,img:x.img||x.wide,badge:'-%'+x.pct,img2:x.wide,
-    sub:x.price+' · eski '+x.was+(x.plat?' · '+x.plat:''),url:x.url}));
+    sub:x.price+' · eski '+x.was,url:x.url}));
   if(!items.length)throw new Error('ps-bos');
   const mins=Math.max(0,Math.round((Date.now()-Date.parse(j.t))/6e4)),ago=mins<90?mins+' dk önce':Math.round(mins/60)+' sa önce';
   return{items,land:false,foot:'PlayStation Store TR · en yüksek indirimler · güncelleme '+ago};
@@ -2731,8 +2733,8 @@ function mountCovers(w,root,cfg){
     if(cv.classList.contains('h')){
       const gx=parseFloat(cs.columnGap)||10,gy=parseFloat(cs.rowGap)||10;
       const W=cv.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0),H=cv.clientHeight-(parseFloat(cs.paddingTop)||0)-(parseFloat(cs.paddingBottom)||0);
-      const cols=W>=700?4:Math.max(1,Math.min(3,Math.floor((W+gx)/150)));
-      const rows=Math.max(1,Math.floor((H+gy)/(96+gy))),rowH=Math.floor((H-gy*(rows-1))/rows);
+      const cols=Math.max(2,Math.min(5,Math.floor((W+gx)/130)));
+      const rows=Math.max(1,Math.floor((H+gy)/(138+gy))),rowH=Math.floor((H-gy*(rows-1))/rows);
       cv.style.gridTemplateColumns='repeat('+cols+',minmax(0,1fr))';cv.style.gridAutoRows=rowH+'px';
       const per=cols*rows;pages=Math.max(1,Math.ceil(cards.length/per));page=Math.min(page,pages-1);
       cards.forEach((c,i)=>{c.hidden=i<page*per||i>=(page+1)*per});
