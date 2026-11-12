@@ -3074,13 +3074,16 @@ async function aiSummarize(text,title){
   const list=typeof pref==='string'&&pref?[pref,...AI_MODELS.filter(m=>m!==pref)]:AI_MODELS;
   for(const m of list){
     let r;
-    try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)})}
-    catch{throw new Error('net')}
-    const j=await r.json().catch(()=>null),msg=String(j&&j.error&&j.error.message||'');
+    const ac=new AbortController(),to=setTimeout(()=>ac.abort(),30000);   /* cevap gelmezse sonsuza dek "Özetleniyor…" kalmasın */
+    let j=null;
+    try{r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body),signal:ac.signal});j=await r.json().catch(()=>null)}
+    catch(e){throw new Error(e&&e.name==='AbortError'?'timeout':'net')}
+    finally{clearTimeout(to)}
+    const msg=String(j&&j.error&&j.error.message||'');
     if(r.status===404)continue;                                   /* bu model adı yok → sıradakini dene */
     if(r.status===429)throw new Error('quota');
     if(r.status===403||(r.status===400&&/api key|API_KEY/i.test(msg)))throw new Error('badkey');
-    if(!r.ok)throw new Error('http '+r.status);
+    if(!r.ok)throw new Error('http '+r.status+(msg?': '+msg.slice(0,140):''));
     const t=((j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(x=>x.text||'').join('\n');
     const lines=t.split(/\n+/).map(x=>x.replace(/^\s*(?:[-*•]|\d+[.)])\s*/,'').replace(/\*\*/g,'').trim()).filter(x=>x.length>3).slice(0,6);
     if(!lines.length)throw new Error('empty');
@@ -3105,7 +3108,7 @@ function rdAI(c,art,url,title){
       if(!box.isConnected)return;
       const m=e.message;
       if(m==='badkey'){LS.set('pano.key.gemini','');form('Anahtar kabul edilmedi. Doğru anahtarı girin.');return}
-      box.innerHTML='<div class="rdr-ain">'+esc(m==='quota'?'Gemini kullanım limiti doldu, biraz sonra tekrar deneyin.':m==='net'?'Gemini\'ye ulaşılamadı. Bağlantınızı kontrol edin.':m==='empty'?'Özet üretilemedi.':m==='nomodel'?'Uygun Gemini modeli bulunamadı.':'Özet alınamadı ('+m+').')+'</div><button type="button" class="rdr-aib" data-a="airetry">Tekrar dene</button>';
+      box.innerHTML='<div class="rdr-ain">'+esc(m==='quota'?'Gemini kullanım limiti doldu, biraz sonra tekrar deneyin.':m==='timeout'?'Gemini 30 saniyede yanıt vermedi. Tekrar deneyin.':m==='net'?'Gemini\'ye ulaşılamadı (ağ ya da tarayıcı engeli).':m==='empty'?'Özet üretilemedi.':m==='nomodel'?'Uygun Gemini modeli bulunamadı.':'Özet alınamadı ('+m+').')+'</div><button type="button" class="rdr-aib" data-a="airetry">Tekrar dene</button>';
     }
   };
   box.addEventListener('click',e=>{
