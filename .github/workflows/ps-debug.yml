@@ -11,17 +11,21 @@ jobs:
         run: |
           cat > d.mjs <<'EOF'
           const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-          const H=['9845afc0dbaab4965f6563fffc703f588c8e76792000e8610843b8d3ee9c4c09'];
-          const cat='3f772501-f6f8-49b7-abac-874a88ca4897';
-          for(const h of H){
-            const vars={id:cat,pageArgs:{size:24,offset:0},sortBy:null,filterBy:[],facetOptions:[]};
-            const ext={persistedQuery:{version:1,sha256Hash:h}};
-            const u='https://web.np.playstation.com/api/graphql/v1/op?operationName=categoryGridRetrieve&variables='+encodeURIComponent(JSON.stringify(vars))+'&extensions='+encodeURIComponent(JSON.stringify(ext));
+          const h='9845afc0dbaab4965f6563fffc703f588c8e76792000e8610843b8d3ee9c4c09';
+          const q=async(cat,vars2)=>{
+            const vars={id:cat,pageArgs:{size:24,offset:0},sortBy:null,filterBy:[],facetOptions:[],...vars2};
+            const u='https://web.np.playstation.com/api/graphql/v1/op?operationName=categoryGridRetrieve&variables='+encodeURIComponent(JSON.stringify(vars))+'&extensions='+encodeURIComponent(JSON.stringify({persistedQuery:{version:1,sha256Hash:h}}));
             const r=await fetch(u,{headers:{'user-agent':UA,'accept':'application/json','content-type':'application/json','x-psn-store-locale-override':'tr-TR','origin':'https://store.playstation.com','referer':'https://store.playstation.com/','accept-language':'tr-TR,tr;q=0.9'}});
-            const t=await r.text();console.log('API',r.status,t.length,t.slice(0,1500).replace(/\s+/g,' '));
-          }
-          const r2=await fetch('https://store.playstation.com/tr-tr/pages/deals',{headers:{'user-agent':UA,'accept-language':'tr-TR,tr;q=0.9'}});
-          const t2=await r2.text();const ids=[...new Set([...t2.matchAll(/\/category\/([0-9a-f-]{36})/g)].map(x=>x[1]))];console.log('deals kategori',ids.length,ids.slice(0,12).join(' '));
-          const bt=t2.match(/"batarangs":\{[\s\S]{0,600}/);console.log('batarangs',bt?bt[0].replace(/\s+/g,' ').slice(0,600):'yok');
+            return {s:r.status,j:await r.json().catch(()=>null)};
+          };
+          const cat='3f772501-f6f8-49b7-abac-874a88ca4897';
+          const {s,j}=await q(cat);
+          const g=j&&j.data&&j.data.categoryGridRetrieve;
+          console.log('status',s,'keys',g&&Object.keys(g),'errors',JSON.stringify(j&&j.errors).slice(0,300));
+          (g.facetOptions||[]).forEach(f=>console.log('FACET',f.name,f.displayName,(f.values||[]).slice(0,8).map(v=>v.key+':'+v.displayName+':'+v.count).join(' | ')));
+          console.log('pageInfo',JSON.stringify(g.pageInfo),'sort',JSON.stringify(g.sortingOptions||g.sortBy||'').slice(0,400));
+          console.log('nproducts',(g.products||[]).length,'sample',JSON.stringify((g.products||[])[0]).slice(0,1300));
+          const withDisc=(g.products||[]).filter(p=>p.price&&p.price.discountText).length;console.log('indirimli bu sayfada',withDisc);
+          const t=await q(cat,{sortBy:{name:'price',isAscending:false}});console.log('sort price status',t.s,JSON.stringify(t.j&&t.j.errors||'').slice(0,200),(t.j&&t.j.data&&t.j.data.categoryGridRetrieve.products||[]).map(p=>p.price&&p.price.discountText).join(','));
           EOF
           node d.mjs
