@@ -47,8 +47,8 @@ export function toItem(o) {
   if (!(pct > 0)) pct = Math.round((1 - now / base) * 100);
   if (!(pct > 0)) return null;
   const media = Array.isArray(o.media) ? o.media : [];
-  const pick = (r) => media.find((m) => m && m.role === r && /^https:/.test(m.url || ''));
-  const im = pick('MASTER') || pick('GAMEHUB_COVER_ART') || media.find((m) => m && m.type === 'IMAGE' && /^https:/.test(m.url || ''));
+  const pick = (r) => media.find((m) => m && m.role === r && m.type === 'IMAGE' && /^https:/.test(m.url || ''));
+  const im = pick('PORTRAIT_BANNER') || pick('MASTER') || pick('GAMEHUB_COVER_ART') || media.find((m) => m && m.type === 'IMAGE' && /^https:/.test(m.url || ''));
   const id = String(o.id || o.productId || '');
   if (!id) return null;
   const kind = /^[A-Z]{2}\d{4}-/.test(id) ? 'product' : (o.__typename === 'Concept' ? 'concept' : 'product');
@@ -64,45 +64,41 @@ export function toItem(o) {
   };
 }
 
-async function get(url) {
-  const r = await fetch(url, { headers: { 'user-agent': UA, 'accept-language': 'tr-TR,tr;q=0.9', accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(25000) });
-  const t = await r.text();
-  console.log(r.status, url.replace(BASE, ''), t.length);
-  return { ok: r.ok, html: t };
-}
+// Mağaza sayfası içeriği tarayıcıda yüklenir; ürünler mağazanın kendi GraphQL ucundan (kalıcı sorgu) gelir.
+const API = 'https://web.np.playstation.com/api/graphql/v1/op';
+const HASH = '9845afc0dbaab4965f6563fffc703f588c8e76792000e8610843b8d3ee9c4c09';   // categoryGridRetrieve
+const KEEP = /^(Tam Sürüm Oyun|Premium Sürüm|Oyun Paketi)$/i;   // eklenti, kostüm, seviye vb. girmesin
 
-export function categoryLinks(html) {
-  const ids = new Set();
-  for (const m of html.matchAll(/\/tr-tr\/category\/([0-9a-f-]{36})/gi)) ids.add(m[1].toLowerCase());
-  return [...ids];
+async function grid(cat, offset, size = 100) {
+  const vars = { id: cat, pageArgs: { size, offset }, sortBy: { name: 'sales30', isAscending: false }, filterBy: [], facetOptions: [] };
+  const url = API + '?operationName=categoryGridRetrieve&variables=' + encodeURIComponent(JSON.stringify(vars)) +
+    '&extensions=' + encodeURIComponent(JSON.stringify({ persistedQuery: { version: 1, sha256Hash: HASH } }));
+  const r = await fetch(url, {
+    headers: { 'user-agent': UA, accept: 'application/json', 'content-type': 'application/json', 'x-psn-store-locale-override': 'tr-TR',
+      origin: BASE, referer: BASE + '/', 'accept-language': 'tr-TR,tr;q=0.9' },
+    signal: AbortSignal.timeout(25000),
+  });
+  const j = await r.json().catch(() => null);
+  const g = j && j.data && j.data.categoryGridRetrieve;
+  console.log(r.status, 'grid', cat, 'offset', offset, '→', g ? (g.products || []).length : 'veri yok', j && j.errors ? JSON.stringify(j.errors).slice(0, 200) : '');
+  return g;
 }
 
 async function main() {
   const outFile = process.argv[2] || 'out/ps.json';
-  const cats = [...KNOWN];
-  try {
-    const d = await get(`${BASE}/tr-tr/pages/deals`);
-    if (d.ok) categoryLinks(d.html).forEach((c) => { if (!cats.includes(c)) cats.push(c); });
-  } catch (e) { console.log('deals sayfası alınamadı:', e.message); }
-
   const byId = new Map();
-  let tried = 0;
-  for (const c of cats) {
-    if (tried >= 8 || byId.size >= 120) break;
-    tried++;
-    let got = 0;
-    for (let pg = 1; pg <= PAGES_PER_CAT; pg++) {
-      try {
-        const r = await get(`${BASE}/tr-tr/category/${c}/${pg}`);
-        if (!r.ok) break;
-        const nd = nextData(r.html);
-        if (!nd) { console.log('  __NEXT_DATA__ yok'); break; }
-        const items = products(nd).map(toItem).filter(Boolean);
-        items.forEach((it) => { if (!byId.has(it.id)) { byId.set(it.id, it); got++; } });
-        if (!items.length) break;
-      } catch (e) { console.log('  hata:', e.message); break; }
+  for (const cat of KNOWN) {
+    for (let off = 0; off < 300; off += 100) {
+      let g;
+      try { g = await grid(cat, off); } catch (e) { console.log('hata:', e.message); break; }
+      if (!g) break;
+      for (const o of g.products || []) {
+        if (!KEEP.test(String(o.localizedStoreDisplayClassification || ''))) continue;
+        const it = toItem(o);
+        if (it && it.pct >= 20 && !byId.has(it.id)) byId.set(it.id, it);
+      }
+      if (g.pageInfo && g.pageInfo.isLast) break;
     }
-    console.log('kategori', c, '→', got, 'indirimli ürün');
   }
   const seenName = new Set();
   const list = [...byId.values()]
@@ -110,7 +106,7 @@ async function main() {
     .filter((x) => !seenName.has(x.name.toLowerCase()) && seenName.add(x.name.toLowerCase()))
     .slice(0, MAX_ITEMS);
   if (!list.length) {
-    console.log('::warning::PS Store: indirimli ürün bulunamadı (engellenmiş ya da yapı değişmiş olabilir); ps.json yazılmadı.');
+    console.log('::warning::PS Store: indirimli ürün bulunamadı (engellenmiş ya da sorgu değişmiş olabilir); ps.json yazılmadı.');
     return;
   }
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
