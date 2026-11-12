@@ -1,26 +1,36 @@
-// Radyo: yayın ortada donarsa oynatıcı kendiliğinden yeniden bağlanır (gerçek MP3 akışı ffmpeg ile üretilir; yoksa test atlanır).
+// Radyo: yayın ortada donarsa oynatıcı kendiliğinden yeniden bağlanır.
+// Akış, ffmpeg ile bir kez üretilen MP3'ten gerçek zamanlı hızda sunulur (ffmpeg yoksa test atlanır).
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { spawn, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { startServer, launch, newContext, openPage } from './helpers.mjs';
 
 const hasFfmpeg = spawnSync('ffmpeg', ['-version']).status === 0;
-let srv, browser, stall, conns = 0;
+let srv, browser, stall, conns = 0, mp3;
 before(async () => {
   srv = await startServer(); browser = await launch();
+  if (!hasFfmpeg) return;
+  const f = path.join(os.tmpdir(), 'ali-radio-test.mp3');
+  spawnSync('ffmpeg', ['-y', '-loglevel', 'quiet', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=90', '-b:a', '64k', f]);
+  mp3 = fs.readFileSync(f);
   stall = http.createServer((q, r) => {
     const k = ++conns;
     r.writeHead(200, { 'content-type': 'audio/mpeg', 'access-control-allow-origin': '*' });
-    const ff = spawn('ffmpeg', ['-loglevel', 'quiet', '-re', '-f', 'lavfi', '-i', 'sine=frequency=440', '-f', 'mp3', '-b:a', '64k', '-'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let pos = 0;
+    const send = (n) => { if (pos < mp3.length) { r.write(mp3.subarray(pos, pos + n)); pos += n; } };
+    send(48000);                                         // başlangıç dolgusu
     const t0 = Date.now();
-    ff.stdout.on('data', (d) => { if (k === 1 && Date.now() - t0 > 8000) return; r.write(d); });   // 1. bağlantı 8. sn'den sonra donar (veri kesilir, bağlantı açık kalır)
-    q.on('close', () => ff.kill());
-    r.on('close', () => ff.kill());
+    const iv = setInterval(() => { if (k === 1 && Date.now() - t0 > 8000) return; send(8000); }, 1000);   // 8 KB/sn ≈ 64 kbps; 1. bağlantı 8. sn'den sonra donar (bağlantı açık, veri yok)
+    const stop = () => clearInterval(iv);
+    q.on('close', stop); r.on('close', stop);
   });
   await new Promise((ok) => stall.listen(0, '127.0.0.1', ok));
 });
-after(async () => { await browser.close(); await srv.close(); stall.closeAllConnections?.(); stall.close(); });
+after(async () => { await browser.close(); await srv.close(); if (stall) { stall.closeAllConnections?.(); stall.close(); } });
 
 test('Radyo ODTÜ: yayın donunca otomatik yeniden bağlanır', { skip: !hasFfmpeg && 'ffmpeg yok', timeout: 90000 }, async () => {
   const target = `http://127.0.0.1:${stall.address().port}/s`;
@@ -30,13 +40,11 @@ test('Radyo ODTÜ: yayın donunca otomatik yeniden bağlanır', { skip: !hasFfmp
   const { page } = await openPage(ctx, srv.url);
   const W = page.locator('.w[data-id=radio]');
   await W.locator('.rd-it[data-k=odtu]').click();
-  const st = () => W.locator('.rd-st').innerText();
-  await page.waitForFunction(() => /CANLI/.test(document.querySelector('.w[data-id=radio] .rd-st')?.innerText || ''), null, { timeout: 15000 });
-  await page.waitForTimeout(500);
+  const has = (re) => page.waitForFunction((s) => new RegExp(s).test(document.querySelector('.w[data-id=radio] .rd-st')?.innerText || ''), re, { timeout: 40000 });
+  await has('CANLI');
   assert.equal(conns, 1);
-  // donma: 'Bağlanıyor…' görünür, sonra yeni bağlantıyla yeniden CANLI
-  await page.waitForFunction(() => /Bağlanıyor/.test(document.querySelector('.w[data-id=radio] .rd-st')?.innerText || ''), null, { timeout: 20000 });
-  await page.waitForFunction(() => /CANLI/.test(document.querySelector('.w[data-id=radio] .rd-st')?.innerText || ''), null, { timeout: 30000 });
-  assert.ok(conns >= 2, 'yeniden bağlanılmadı');
+  await has('Bağlanıyor');                               // donma fark edilir
+  await has('CANLI');                                    // yeni bağlantıyla toparlanır
+  assert.ok(conns >= 2, 'yeniden bağlanılmadı (bağlantı sayısı ' + conns + ')');
   await ctx.close();
 });

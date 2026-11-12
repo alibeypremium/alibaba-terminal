@@ -28,6 +28,7 @@ export const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-
 export async function newContext(browser, { viewport = { width: 1920, height: 909 }, mocks = [] } = {}) {
   const ctx = await browser.newContext({ viewport });
   await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
+  await ctx.routeWebSocket(/^wss?:\/\/(?!127\.0\.0\.1)/, (ws) => ws.close());   // canlı fiyat soketleri de dış ağa çıkmasın
   for (const [re, fn] of mocks) await ctx.route(re, fn);
   return ctx;
 }
@@ -37,7 +38,7 @@ export async function openPage(ctx, url, { ls = {}, layout } = {}) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|CORS|preflight/i.test(m.text())) errors.push('console: ' + m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR|CORS|preflight|WebSocket/i.test(m.text())) errors.push('console: ' + m.text()); });
   await page.addInitScript(([ls, layout]) => {
     try {
       if (!sessionStorage.__init) {
