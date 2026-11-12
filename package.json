@@ -1,0 +1,12 @@
+{
+  "name": "alibaba-terminal",
+  "private": true,
+  "type": "module",
+  "description": "AliBaba Terminal: otomatik testler (tarayıcı akışları sahte verilerle çalışır, dış ağa çıkılmaz)",
+  "scripts": {
+    "test": "node --test --test-concurrency=2 \"tests/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
