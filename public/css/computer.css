@@ -1,0 +1,143 @@
+/* Bilgisayar sekmesi: retro CRT monitör (düz, karşıdan) + Windows 98 simülatörü */
+.w[data-id=youtube][data-tab=pc]{--w-bg:linear-gradient(160deg,rgba(0,112,112,.95),rgba(0,44,52,.98));--acc:#ffd24a}
+.w[data-id=youtube][data-tab=pc][data-term="1"]{--w-bg:linear-gradient(165deg,rgba(84,76,70,.97),rgba(40,36,34,.99));--acc:#ff9d1a}
+.w[data-id=youtube][data-tab=pc][data-term="1"] .pc-stage{position:relative}
+.w[data-id=youtube][data-tab=pc][data-term="1"] .pc-stage::before{content:"";position:absolute;inset:-4% -8%;pointer-events:none;background:radial-gradient(ellipse 62% 58% at 50% 46%,rgba(255,150,40,.26),rgba(255,120,30,.08) 55%,transparent 75%)}
+.w[data-id=youtube][data-tab=pc][data-term="1"] .pc-mon{position:relative;z-index:1}
+.pcw{display:flex;flex-direction:column;height:100%;gap:8px;min-height:0}
+.pc-stage{flex:1;min-height:0;container-type:size;display:flex;justify-content:center;align-items:stretch}
+.pc-mon{width:min(100cqw,calc(100cqh*1.55));height:100%;display:flex;flex-direction:column;align-items:center}
+/* Kasa: kirli bej plastik; ince nokta dokusu, kenar kırılmaları, üstte havalandırma */
+.pc-case{position:relative;width:100%;flex:1;min-height:0;display:flex;flex-direction:column;padding:4.2% 3.6% 1.6%;gap:2.2%;border-radius:20px 20px 10px 10px;
+  background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M34%2070%20Q52%2058%2076%2060%22%20stroke%3D%22%23fff7e8%22%20stroke-opacity%3D%22.45%22%20stroke-width%3D%221%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M312%2038%20Q330%2046%20352%2041%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.4%22%20stroke-width%3D%221%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M20%20206%20Q30%20220%2027%20244%22%20stroke%3D%22%23fff7e8%22%20stroke-opacity%3D%22.45%22%20stroke-width%3D%221%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M372%20226%20Q358%20240%20350%20262%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.4%22%20stroke-width%3D%221%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M8%2040%20l1%201%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.3%22%20stroke-width%3D%221.8%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M391%20120%20l1%201%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.3%22%20stroke-width%3D%221.8%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M60%20296%20l1%201%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.3%22%20stroke-width%3D%221.8%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3Cpath%20d%3D%22M5%20262%20l1%201%22%20stroke%3D%22%23b9763a%22%20stroke-opacity%3D%22.3%22%20stroke-width%3D%221.8%22%20vector-effect%3D%22non-scaling-stroke%22/%3E%3C/g%3E%3C/svg%3E") 0 0/100% 100% no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22480%22%20height%3D%22320%22%3E%3Cfilter%20id%3D%22f%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.8%22%20numOctaves%3D%222%22%20seed%3D%2211%22%20stitchTiles%3D%22stitch%22%20result%3D%22fine%22/%3E%3CfeColorMatrix%20in%3D%22fine%22%20values%3D%220%200%200%200%20.33%200%200%200%200%20.21%200%200%200%200%20.09%200%200%200%20-9%203.25%22%20result%3D%22spk%22/%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.011%20.016%22%20numOctaves%3D%223%22%20seed%3D%225%22%20stitchTiles%3D%22stitch%22%20result%3D%22low%22/%3E%3CfeColorMatrix%20in%3D%22low%22%20values%3D%220%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%200%20-7%203.05%22%20result%3D%22m%22/%3E%3CfeComposite%20in%3D%22spk%22%20in2%3D%22m%22%20operator%3D%22in%22/%3E%3C/filter%3E%3Crect%20width%3D%22480%22%20height%3D%22320%22%20filter%3D%22url%28%23f%29%22/%3E%3C/svg%3E") 0 0/480px 320px,url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22640%22%20height%3D%22420%22%3E%3Cfilter%20id%3D%22s%22%20x%3D%220%22%20y%3D%220%22%20width%3D%22100%25%22%20height%3D%22100%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.006%20.009%22%20numOctaves%3D%223%22%20seed%3D%229%22%20stitchTiles%3D%22stitch%22/%3E%3CfeColorMatrix%20values%3D%220%200%200%200%20.5%200%200%200%200%20.33%200%200%200%200%20.12%200%200%200%20-2.7%201.02%22/%3E%3C/filter%3E%3Crect%20width%3D%22640%22%20height%3D%22420%22%20filter%3D%22url%28%23s%29%22/%3E%3C/svg%3E") 0 0/640px 420px,radial-gradient(ellipse at 8% 100%,rgba(70,55,28,.24),transparent 38%),radial-gradient(ellipse at 94% 100%,rgba(70,55,28,.2),transparent 36%),radial-gradient(ellipse at 12% 6%,rgba(214,172,92,.2),transparent 34%),radial-gradient(rgba(96,80,44,.1) .7px,transparent .95px) 0 0/3px 3px,linear-gradient(90deg,rgba(0,0,0,.18),transparent 6%,transparent 94%,rgba(0,0,0,.2)),linear-gradient(176deg,#eee8d3,#d6d0b9 48%,#bcb59c);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.85),inset 2px 0 0 rgba(255,255,255,.35),inset -2px 0 0 rgba(0,0,0,.14),inset 0 -5px 0 rgba(0,0,0,.2),inset 0 0 0 1px rgba(80,66,34,.25),inset 0 0 0 2px rgba(206,150,80,.2),inset 0 0 32px rgba(186,136,64,.38),0 16px 26px -12px rgba(0,0,0,.7)}
+.pc-vents{position:absolute;top:1.5%;left:50%;translate:-50% 0;width:34%;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(60,50,25,.38) 0 2px,transparent 2px 6px);box-shadow:0 1px 0 rgba(255,255,255,.6)}
+/* Çerçeve: içe gömük halka, koyu gri ön panel, bombeli cam */
+.pc-lip{flex:1;min-height:0;border-radius:14px;padding:1.1%;background:linear-gradient(160deg,#a8a28a,#dcd6c1);box-shadow:inset 0 3px 5px rgba(0,0,0,.35),0 1px 0 rgba(255,255,255,.85)}
+.pc-bezel{width:100%;height:100%;border-radius:11px;padding:2.6%;background:linear-gradient(160deg,#4b493f,#716e5f 55%,#5f5c4f);box-shadow:inset 0 5px 10px rgba(0,0,0,.7),inset 0 0 0 1px rgba(0,0,0,.4),0 -1px 0 rgba(0,0,0,.2)}
+.pc-screen{position:relative;width:100%;height:100%;overflow:hidden;border-radius:18px/15px;background:#050807;box-shadow:inset 0 0 26px rgba(0,0,0,.95),0 0 0 2px rgba(0,0,0,.55),0 1px 0 2px rgba(255,255,255,.18)}
+.pc-vp{position:absolute;left:0;top:0;transform-origin:0 0}
+.pc-vp iframe{display:block;width:100%;height:100%;border:0;background:#008080}
+.pc-screen::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:radial-gradient(110% 70% at 28% -8%,rgba(255,255,255,.24),transparent 52%),radial-gradient(ellipse at center,transparent 56%,rgba(0,0,0,.45)),repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0 1px,transparent 1px 3px)}
+.pc-mon.on .pc-screen{box-shadow:inset 0 0 22px rgba(0,0,0,.8),0 0 0 2px rgba(0,0,0,.55),0 0 30px rgba(120,190,255,.3)}
+.pc-screen.pwr{animation:crt .7s cubic-bezier(.2,.7,.2,1)}
+@keyframes crt{0%{transform:scale(1,.01);filter:brightness(4)}35%{transform:scale(1,.01);filter:brightness(3)}70%{transform:scale(1,1.02);filter:brightness(1.8)}100%{transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){.pc-screen.pwr{animation:none}}
+.pc-off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:10px;color:rgba(190,255,200,.55);font:600 12px/1.4 "Courier New",monospace;letter-spacing:.04em}
+.pc-off.boot{color:rgba(190,255,200,.9)}
+/* Alt panel: kabartma marka, hoparlör ızgarası, ayar düğmeleri, LED, güç */
+.pc-chin{display:flex;align-items:center;gap:8px;min-height:26px;padding:0 4px;color:#5a563f}
+.pc-brand{font:800 12px/1 var(--font);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;color:#6a664f;text-shadow:0 1px 0 rgba(255,255,255,.8),0 -1px 0 rgba(0,0,0,.2)}
+.pc-model{font:600 8.5px/1 var(--font);letter-spacing:.1em;text-transform:uppercase;color:#7b775f;white-space:nowrap;padding-left:8px;border-left:1px solid rgba(0,0,0,.22);text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.pc-sp{flex:1}
+.pc-spk{width:34px;height:11px;flex:none;border-radius:3px;background:radial-gradient(circle,rgba(40,32,12,.6) .9px,transparent 1.3px) 0 0/4px 4px;box-shadow:inset 0 1px 2px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.7)}
+.pc-keys{display:flex;align-items:center;gap:5px;flex:none}
+.pc-kd{width:2px;height:14px;border-radius:1px;background:rgba(60,48,22,.3);box-shadow:1px 0 0 rgba(255,255,255,.55);margin:0 1px}
+.pc-k svg.t{width:19px;height:12px}
+.pc-k.src.sel{color:#c7c1a6}
+.pc-term{position:absolute;inset:0;container-type:size;display:flex;flex-direction:column;background:#000;color:#ff9d1a;font:700 clamp(8.5px,2.7cqw,12px)/1.2 "Lucida Console",Consolas,"Courier New",ui-monospace,monospace;filter:brightness(var(--br,1))}
+.pc-term button{box-sizing:border-box;font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left;padding:0}
+.tm-h{flex:none;display:flex;align-items:center;gap:10px;padding:3px 8px;background:#ff8c00;border-bottom:2px solid #d4141c;color:#000;white-space:nowrap;overflow:hidden;letter-spacing:.06em}
+.tm-live{margin-left:auto;text-decoration:none;color:#ff4a4a;font-size:.66em;letter-spacing:.12em;font-weight:700}
+.tm-live::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:#ff3b30;margin-right:4px;vertical-align:1px;animation:tmlv 1.4s infinite}
+@keyframes tmlv{50%{opacity:.2}}
+.tm-h em{font-style:normal;font-weight:700;opacity:.75}
+.tm-clk{margin-left:auto;font-weight:700;letter-spacing:0;font-size:.92em}
+.tm-b{flex:1;min-height:0;display:flex;flex-direction:column}
+.tm-t{flex:none;display:flex;flex-direction:column}
+.tm-r{display:grid;grid-template-columns:1.15fr 1.1fr .8fr;gap:6px;padding:1.5px 12px 1.5px 8px;width:100%;align-items:center;border-bottom:1px solid #1c1405}
+.tm-r span:nth-child(n+2){text-align:right}
+.tm-r .s{color:#ff9d1a}.tm-r .v{color:#f4f4f4}
+.tm-cat{display:flex;align-items:center;gap:6px;padding:3px 8px 0;color:#ffcf7a;font-size:.78em;letter-spacing:.14em}
+.tm-cat i{flex:1;height:1px;background:linear-gradient(90deg,#d4141c,rgba(212,20,28,.15))}
+.tm-cat span{border-left:3px solid #d4141c;padding-left:5px}
+.tm-cat:not(:first-of-type){margin-top:2px}
+.tm-hd{color:#8a6a2a;font-size:.88em;border-bottom:1px solid #4a3410;cursor:default}
+button.tm-r:hover{background:#1a1204}
+button.tm-r.sel{background:#ff9d1a}
+button.tm-r.sel .s,button.tm-r.sel .v{color:#000}
+button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
+.tm-r .c{white-space:nowrap}.up{color:#18d46a}.dn{color:#ff4a3d}
+.tm-r .v.fl{animation:tmfl .9s ease-out}
+.tm-r .v.fl.fu{--fl:rgba(24,212,106,.22)}
+.tm-r .v.fl.fd{--fl:rgba(255,74,61,.22)}
+@keyframes tmfl{0%{background:var(--fl,rgba(255,157,26,.2))}100%{background:transparent}}
+.tm-c{flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid #4a3410}
+.tm-ch{flex:none;display:flex;align-items:baseline;gap:10px;padding:2px 8px;white-space:nowrap;overflow:hidden}
+.tm-n{color:#ff9d1a}.tm-l{color:#fff;font-size:1.25em}.tm-q{font-size:.95em}.tm-l.up,.tm-l.dn{color:#fff}
+.tm-cw{position:relative;flex:1;min-height:0}
+.tm-cw canvas,.tm-f{position:absolute;inset:0;width:100%;height:100%;display:block;border:0}
+.tm-s{flex:none;padding:2px 8px 3px;font-size:.78em;color:#8a6a2a;border-top:1px solid #4a3410}
+.tm-s .u{color:#ff4a4a;letter-spacing:.06em;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-s .g{display:grid;grid-template-columns:repeat(3,1fr);gap:0 8px}
+.tm-s .g span{color:#f4f4f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-s em{font-style:normal;color:#ff9d1a;margin-right:4px}
+.tm-s b{font-weight:700}
+.tm-tape{flex:none;overflow:hidden;white-space:nowrap;background:#120c00;border-top:1px solid #4a3410;padding:2px 0}
+.tm-tr{display:inline-block;animation:tmtape 40s linear infinite}
+.tm-tr span{margin:0 12px}.tm-tr b{color:#f4f4f4}.tm-tr i{font-style:normal}
+@keyframes tmtape{to{transform:translateX(-50%)}}
+@container (max-width:400px){.nyc,.tm-h em{display:none}.tm-t{flex:0 1 64%;overflow:auto;scrollbar-width:thin;scrollbar-color:#6b4a10 #000}.tm-c{flex:1 0 74px}}
+@container (min-width:430px){.tm-b{flex-direction:row}.tm-t{width:47%;border-right:1px solid #4a3410}.tm-c{border-top:0;flex:1;min-width:0}}
+.pc-ia{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;gap:8px;padding:12px;background:rgba(5,10,8,.94);color:#d7f5df;font:12px/1.35 var(--font);overflow:hidden}
+.pc-ia-h{display:flex;align-items:center;justify-content:space-between;font-size:13px;letter-spacing:.03em}
+.pc-ia-x{border:0;background:#1d3a2a;color:#d7f5df;border-radius:6px;width:26px;height:26px;font-size:16px;cursor:pointer}
+.pc-ia-s{display:flex;gap:6px}
+.pc-ia-s input{flex:1;min-width:0;padding:6px 8px;border-radius:6px;border:1px solid #2f6b47;background:#0c1a13;color:#d7f5df;font:inherit}
+.pc-ia-s button{padding:6px 12px;border-radius:6px;border:0;background:#1d5c3a;color:#e9fff0;font:inherit;cursor:pointer}
+.pc-ia-l{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.pc-ia-l button{text-align:left;padding:7px 10px;border-radius:6px;border:1px solid #20402d;background:#0e2017;color:#d7f5df;font:inherit;cursor:pointer}
+.pc-ia-l button:hover,.pc-ia-l button.cur{background:#1d5c3a;border-color:#3fa56a}
+.pc-ia-m{opacity:.7;padding:2px 2px 4px}
+.pc-dom{position:absolute;left:8px;bottom:8px;z-index:5;max-width:calc(100% - 16px);padding:4px 10px;border-radius:12px;background:rgba(0,0,0,.72);color:#dfffe6;font:600 10.5px/1.35 var(--font);pointer-events:none}
+.pc-k.flash{color:var(--lamp)}
+.pc-k.flash svg{filter:drop-shadow(0 0 3px var(--lamp))}
+@container (max-width:480px){.pc-chin{gap:6px}.pc-keys{gap:4px}.pc-keys .pc-k{width:20px;height:18px}.pc-keys .pc-k svg{width:11px;height:11px}.pc-keys .pc-k svg.t{width:15px;height:10px}.pc-brand{font-size:10px;letter-spacing:.08em}}
+@container (max-width:420px){.pc-brand{display:none}}
+@container (max-width:340px){.pc-keys{gap:3px}.pc-keys .pc-k{width:18px;height:17px}.pc-keys .pc-k svg.t{width:14px}}
+.pc-k{appearance:none;border:0;position:relative;width:27px;height:20px;border-radius:4px;cursor:pointer;flex:none;padding:0;display:grid;place-items:center;color:#8b866f;
+  background:linear-gradient(#5b5749,#3b382e);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(0,0,0,.38),0 2px 0 #8a846b,0 3px 4px rgba(0,0,0,.35)}
+.pc-k svg{width:12px;height:12px;display:block;transition:filter .2s,opacity .2s}
+.pc-mon.on .pc-k.lit{color:var(--lamp)}
+.pc-mon.on .pc-k.lit svg{filter:drop-shadow(0 0 3px var(--lamp));opacity:var(--lo,1)}
+.pc-k:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(0,0,0,.38),0 1px 0 #8a846b}
+.pc-k:focus-visible{outline:2px solid #4da3ff;outline-offset:2px}
+.pc-mon.nocrt .pc-screen{border-radius:6px}
+.pc-mon.nocrt .pc-screen::after{background:linear-gradient(115deg,rgba(255,255,255,.1) 0,transparent 33%)}
+.pc-vp{filter:brightness(var(--br,1))}
+.pc-led{width:7px;height:7px;border-radius:50%;background:#3a4a3a;box-shadow:inset 0 1px 1px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.6);flex:none}
+.pc-led.on{background:#3dff6a;box-shadow:0 0 7px #3dff6a,inset 0 1px 1px rgba(255,255,255,.5)}
+.pc-pw{appearance:none;border:0;position:relative;flex:none;width:25px;height:25px;border-radius:50%;cursor:pointer;
+  background:radial-gradient(circle at 50% 50%,transparent 60%,rgba(255,200,160,.28) 100%),radial-gradient(circle at 42% 32%,#e5805d,#cb4727 64%,#a23a1f);
+  box-shadow:inset 0 1px 1px rgba(255,235,215,.3),inset 0 -2px 3px rgba(70,18,4,.35),0 0 0 2px rgba(66,50,22,.4),0 1.5px 0 2.5px rgba(255,255,255,.45),0 3px 5px rgba(0,0,0,.32);transition:box-shadow .25s,filter .25s}
+.pc-pw::before{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;translate:-50% -46%;border:2px solid #ffe7d2;border-top-color:transparent;border-radius:50%;opacity:.9}
+.pc-pw::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:7px;translate:-50% -88%;background:#ffe7d2;border-radius:1px;opacity:.9}
+.pc-pw[aria-pressed=true]{filter:brightness(1.1);box-shadow:inset 0 1px 1px rgba(255,235,215,.3),inset 0 -2px 3px rgba(70,18,4,.3),0 0 0 2px rgba(66,50,22,.4),0 1.5px 0 2.5px rgba(255,255,255,.45),0 0 8px rgba(255,105,65,.5)}
+.pc-pw[aria-pressed=true]::before,.pc-pw[aria-pressed=true]::after{opacity:1;filter:drop-shadow(0 0 2px rgba(255,235,210,.9))}
+.pc-pw:active{transform:scale(.94)}
+.pc-pw:focus-visible{outline:2px solid #4da3ff;outline-offset:4px}
+@container (max-width:480px){.pc-model,.pc-spk{display:none}}
+/* Siyah tema: piyasa terminali açıkken monitör kasası siyah olur */
+.pc-case,.pc-lip,.pc-bezel,.pc-neck,.pc-base,.pc-k,.pc-brand,.pc-model{transition:background .35s,box-shadow .35s,color .35s}
+.pc-mon.blk .pc-case{background:linear-gradient(165deg,#2b2c30,#161719 55%,#1d1e22);box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 2px 0 0 rgba(255,255,255,.06),inset -2px 0 0 rgba(0,0,0,.55),inset 0 -5px 0 rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.7),0 16px 26px -12px rgba(0,0,0,.8)}
+.pc-mon.blk .pc-vents{background:repeating-linear-gradient(90deg,rgba(0,0,0,.85) 0 2px,transparent 2px 6px);box-shadow:0 1px 0 rgba(255,255,255,.12)}
+.pc-mon.blk .pc-lip{background:linear-gradient(160deg,#0c0c0e,#26272b);box-shadow:inset 0 3px 5px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.1)}
+.pc-mon.blk .pc-bezel{background:linear-gradient(160deg,#08080a,#16171a 55%,#0d0d0f);box-shadow:inset 0 5px 10px rgba(0,0,0,.85),inset 0 0 0 1px rgba(255,255,255,.05)}
+.pc-mon.blk .pc-chin{color:#8a8d96}
+.pc-mon.blk .pc-brand{color:#45474e;text-shadow:0 1px 0 rgba(255,255,255,.14),0 -1px 0 rgba(0,0,0,.85)}
+.pc-mon.blk .pc-model{color:#4d4f57;border-left-color:rgba(0,0,0,.7);box-shadow:-1px 0 0 rgba(255,255,255,.08);text-shadow:0 1px 0 rgba(255,255,255,.1),0 -1px 0 rgba(0,0,0,.8)}
+.pc-mon.blk .pc-spk{background:radial-gradient(circle,rgba(0,0,0,.9) .9px,transparent 1.3px) 0 0/4px 4px,#1f2023;box-shadow:inset 0 1px 2px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.08)}
+.pc-mon.blk .pc-kd{background:rgba(255,255,255,.14);box-shadow:none}
+.pc-mon.blk .pc-k{color:#8b8e96;background:linear-gradient(#3a3b40,#1e1f22);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(0,0,0,.7),0 2px 0 #050506,0 3px 4px rgba(0,0,0,.5)}
+.pc-mon.blk .pc-k:active{box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(0,0,0,.7),0 1px 0 #050506}
+.pc-mon.blk .pc-k.src.sel{color:#e6e7ea}
+.pc-mon.blk .pc-led{background:#2a2c30;box-shadow:inset 0 1px 1px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.1)}
+.pc-mon.blk .pc-led.on{background:#3dff6a;box-shadow:0 0 7px #3dff6a,inset 0 1px 1px rgba(255,255,255,.5)}
+.pc-mon.blk .pc-pw{background:radial-gradient(circle at 42% 32%,#f0463d,#c4141c 64%,#8e0d14);box-shadow:inset 0 1px 1px rgba(255,220,215,.3),inset 0 -2px 3px rgba(50,0,4,.45),0 0 0 2px rgba(0,0,0,.7),0 1.5px 0 2.5px rgba(255,255,255,.16),0 3px 5px rgba(0,0,0,.5)}
+.pc-mon.blk .pc-pw[aria-pressed=true]{box-shadow:inset 0 1px 1px rgba(255,220,215,.3),inset 0 -2px 3px rgba(50,0,4,.4),0 0 0 2px rgba(0,0,0,.7),0 1.5px 0 2.5px rgba(255,255,255,.16),0 0 9px rgba(255,50,50,.6)}
+.pc-mon.blk .pc-neck{background:linear-gradient(90deg,#0d0d0f,#2a2b2f 50%,#0d0d0f)}
+.pc-mon.blk .pc-base{background:linear-gradient(#2b2c30,#101113);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.4),0 8px 12px -4px rgba(0,0,0,.75)}
+.pc-mon.blk.on .pc-screen{box-shadow:inset 0 0 22px rgba(0,0,0,.8),0 0 0 2px rgba(0,0,0,.7),0 0 26px rgba(255,150,30,.22)}
+/* Ayak: genişleyen boyun ve dönen taban */
+.pc-neck{width:30%;height:3cqh;flex:none;clip-path:polygon(10% 0,90% 0,100% 100%,0 100%);background:linear-gradient(90deg,#a39d86,#ddd8c3 50%,#a39d86)}
+.pc-base{width:52%;height:3cqh;flex:none;border-radius:50%/65% 65% 35% 35%;background:linear-gradient(#d9d4be,#a29c85);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -2px 0 rgba(0,0,0,.18),0 8px 12px -4px rgba(0,0,0,.65)}

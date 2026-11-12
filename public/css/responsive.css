@@ -1,0 +1,46 @@
+/* ====== Mobil ve dokunmatik iyileştirmeler ====== */
+button,.ibtn,.pill,.pc-k,.pc-pw,.tvp-c,.rd-it,.nt-tab,.tv-tab{touch-action:manipulation}
+.w-in{-webkit-touch-callout:none}
+@media (max-width:760px){
+  :root{--radius:24px}
+  /* Küçük ekranda 12+ widget'ın canlı bulanıklığı GPU'yu yorar: yarıçap düşürülür */
+  .w{backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5)}
+  .sb,.pill{backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4)}
+  .date{text-align:left}
+  .top{margin-bottom:14px}
+}
+@media (max-width:520px){
+  :root{--radius:22px}
+  .clock{font-size:clamp(34px,13vw,52px)}
+}
+@media (pointer:coarse){
+  /* iOS Safari, 16px altı alanlara odaklanınca sayfayı yakınlaştırır */
+  input:not([type=range]):not([type=file]):not([type=checkbox]),textarea{font-size:16px!important}
+  .ibtn{width:34px;height:34px}
+  .ibtn svg{width:16px;height:16px}
+  .pgb{width:30px;height:30px;font-size:18px}
+  .dv-tabs button{padding:7px 12px}
+  .nt-tab{padding:7px 13px}
+  .tray button{padding:11px 16px}
+  .w-minus{width:32px;height:32px}
+  .rd-it{padding:9px 16px}
+  .pill{padding:11px 16px}
+  .tvp-c{padding:8px 10px}
+}
+@media (hover:none){
+  .cv-c:hover .cv-img{transform:none;box-shadow:0 10px 22px -10px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.14)}
+  .pill:hover{transform:none}
+}
+@media (max-height:480px) and (orientation:landscape){
+  .shell{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+}
+
+/* Sade mod ve düzenleme: bulanıklık (blur) kapalı, GPU yükü düşük */
+html[data-lite="1"] .w,.editing .w{backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Sade mod, eski bilgisayarlar için: her yerde bulanıklık, geçiş ve animasyon kapalı (haber şeridi hariç), widget'lar 3B katman olmaz,
+   büyük gölgeler kalkar. Video oynarken tarayıcı her kare için bunları yeniden çizmek zorunda kalıyordu. */
+html[data-lite="1"] *,html[data-lite="1"] *::before,html[data-lite="1"] *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transition:none!important}
+html[data-lite="1"] body:not(.editing) *:not(.tk-track),html[data-lite="1"] body:not(.editing) *::before,html[data-lite="1"] body:not(.editing) *::after{animation:none!important}
+html[data-lite="1"] .w{transform:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+html[data-lite="1"] .w::after{display:none}
+@media (prefers-reduced-motion:reduce){.editing .w{animation:none}.skel,.spin{animation:none}}

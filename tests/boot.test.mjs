@@ -11,10 +11,14 @@ after(async () => { await browser.close(); await srv.close(); });
 
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
-test('satır içi JavaScript sözdizimi geçerli', () => {
-  const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-  assert.ok(scripts.length > 0);
-  for (const s of scripts) if (s.trim()) new vm.Script(s);   // hata varsa fırlatır
+test('index.html\'deki tüm betik/stil dosyaları var, hepsi yükleniyor ve JavaScript sözdizimi geçerli', () => {
+  const js = [...html.matchAll(/<script src="(js\/[^"?]+)(?:\?[^"]*)?"><\/script>/g)].map((m) => m[1]);
+  const css = [...html.matchAll(/<link rel="stylesheet" href="(css\/[^"?]+)(?:\?[^"]*)?">/g)].map((m) => m[1]);
+  assert.ok(js.length >= 20 && css.length >= 4, 'beklenen dosyalar index.html\'de yok');
+  for (const f of [...js, ...css]) assert.ok(fs.existsSync(path.join(ROOT, f)), f + ' yok');
+  // diskteki her js/css dosyası sayfada yüklenmeli (unutulan dosya kalmasın)
+  for (const [dir, list] of [['js', js], ['css', css]]) for (const f of fs.readdirSync(path.join(ROOT, dir))) assert.ok(list.includes(dir + '/' + f), dir + '/' + f + ' index.html\'de yüklenmiyor');
+  for (const f of js) new vm.Script(fs.readFileSync(path.join(ROOT, f), 'utf8'), { filename: f });   // hata varsa fırlatır
 });
 
 test('favicon ve ana ekran simgeleri yerinde', () => {
