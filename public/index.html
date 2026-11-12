@@ -2647,6 +2647,16 @@ async function gamesSteam(sec='coming_soon'){
   return{items,land:false,foot:S.foot,note:j._stale?'Çevrimdışı kopya ('+ago(new Date(j._stale).toISOString())+')':''};
 }
 /* İndirimler: CheapShark (anahtarsız, Steam puanı + Metacritic verir) ile Steam vitrinindeki indirim listesi aynı anda denenir; hangisi önce gelirse o gösterilir. */
+/* PlayStation Store TR indirimleri: GitHub Action (ps.yml, 3 saatte bir) ps.json üretir; burada yalnızca o dosya okunur. */
+const PS_FEED='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/veri-ps/ps.json';
+async function gamesPS(){
+  const j=JSON.parse(await getText(PS_FEED+'?t='+Math.floor(Date.now()/6e5),12000));
+  const items=(j.items||[]).filter(x=>x&&x.name&&safeUrl(x.url)).map(x=>({title:x.name,img:x.img,badge:'-%'+x.pct,
+    sub:x.price+' · eski '+x.was+(x.plat?' · '+x.plat:''),url:x.url}));
+  if(!items.length)throw new Error('ps-bos');
+  const mins=Math.max(0,Math.round((Date.now()-Date.parse(j.t))/6e4)),ago=mins<90?mins+' dk önce':Math.round(mins/60)+' sa önce';
+  return{items,land:false,foot:'PlayStation Store TR · en yüksek indirimler · güncelleme '+ago};
+}
 async function gamesDeals(){
   const u='https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1&sortBy=Deal%20Rating&steamRating=75&pageSize=40';
   const asJ=t=>{const j=JSON.parse(String(t).slice(String(t).indexOf('['),String(t).lastIndexOf(']')+1));if(!Array.isArray(j)||!j.length)throw new Error('cheapshark');return j};
@@ -2799,8 +2809,8 @@ function mountCovers(w,root,cfg){
   });
   load();arm();every(w,()=>{if(!showKey)load(true)},3*3600e3);onBus(w,'refresh',()=>{if(!showKey)load()});
 }
-const mountGames=(w,r)=>mountCovers(w,r,{id:'games',title:'Oyunlar',tabs:[['soon','Yakında'],['new','Yeni'],['top','Çok satan'],['sale','İndirim']],optional:()=>true,autoPage:()=>true,prov:()=>'rawg',landDefault:t=>t==='soon'&&!!getKey('rawg'),
-  src:(t,k)=>t==='new'?gamesSteam('new_releases'):t==='top'?gamesSteam('top_sellers'):t==='sale'?gamesDeals():(k?gamesRAWG(k):Promise.any([gamesSteam(),gamesGOG()]))});
+const mountGames=(w,r)=>mountCovers(w,r,{id:'games',title:'Oyunlar',tabs:[['soon','Yakında'],['new','Yeni'],['top','Çok satan'],['sale','İndirim'],['ps','PS']],optional:()=>true,autoPage:()=>true,prov:()=>'rawg',landDefault:t=>t==='soon'&&!!getKey('rawg'),
+  src:(t,k)=>t==='new'?gamesSteam('new_releases'):t==='top'?gamesSteam('top_sellers'):t==='sale'?gamesDeals():t==='ps'?gamesPS():(k?gamesRAWG(k):Promise.any([gamesSteam(),gamesGOG()]))});
 const mountEvents=(w,r)=>mountCovers(w,r,{id:'events',title:'Vizyondaki Filmler',tabs:null,optional:()=>false,autoPage:()=>true,prov:()=>'tmdb',landDefault:()=>false,src:(t,k)=>filmsTMDB(k)});
 
 /* ---------- Haberler ---------- */
