@@ -4,13 +4,7 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          for u in 'https://stream.radyoodtu.com.tr/;' 'https://stream3.radyoodtu.com.tr:8000/;' 'https://stream.radyoodtu.com.tr/' 'https://stream3.radyoodtu.com.tr:8000/' 'http://stream.radyoodtu.com.tr/;'; do
-            echo "== $u"
-            curl -sS -m 8 -D - -o /tmp/o.bin -H 'Icy-MetaData: 0' "$u" 2>&1 | head -20
-            ls -l /tmp/o.bin 2>/dev/null | awk '{print "bytes in 8s:",$5}'
-          done
-          echo "== radio-browser"
-          curl -sS -m 15 'https://de1.api.radio-browser.info/json/stations/search?name=odt%C3%BC&limit=10' | head -c 1500
-          echo; echo "== site"
-          curl -sSL -m 15 https://www.radyoodtu.com.tr/ | grep -oiE "https?://[^\"' ]*(stream|m3u8|mp3|aac|:8000)[^\"' ]*" | sort -u | head
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: npm i --no-save playwright@1 >/dev/null 2>&1; node .github/scripts/dbg.mjs
