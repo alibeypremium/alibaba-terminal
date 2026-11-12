@@ -21,11 +21,11 @@ jobs:
           const cat='3f772501-f6f8-49b7-abac-874a88ca4897';
           const {s,j}=await q(cat);
           const g=j&&j.data&&j.data.categoryGridRetrieve;
-          console.log('status',s,'keys',g&&Object.keys(g),'errors',JSON.stringify(j&&j.errors).slice(0,300));
+          console.log('status',s,'keys',g&&Object.keys(g),'errors',String(JSON.stringify(j&&j.errors)).slice(0,300));
           (g.facetOptions||[]).forEach(f=>console.log('FACET',f.name,f.displayName,(f.values||[]).slice(0,8).map(v=>v.key+':'+v.displayName+':'+v.count).join(' | ')));
-          console.log('pageInfo',JSON.stringify(g.pageInfo),'sort',JSON.stringify(g.sortingOptions||g.sortBy||'').slice(0,400));
-          console.log('nproducts',(g.products||[]).length,'sample',JSON.stringify((g.products||[])[0]).slice(0,1300));
+          console.log('pageInfo',JSON.stringify(g.pageInfo),'sort',String(JSON.stringify(g.sortingOptions||g.sortBy||'')).slice(0,400));
+          console.log('nproducts',(g.products||[]).length,'sample',String(JSON.stringify((g.products||[])[0])).slice(0,1300));
           const withDisc=(g.products||[]).filter(p=>p.price&&p.price.discountText).length;console.log('indirimli bu sayfada',withDisc);
-          const t=await q(cat,{sortBy:{name:'price',isAscending:false}});console.log('sort price status',t.s,JSON.stringify(t.j&&t.j.errors||'').slice(0,200),(t.j&&t.j.data&&t.j.data.categoryGridRetrieve.products||[]).map(p=>p.price&&p.price.discountText).join(','));
+          const t=await q(cat,{sortBy:{name:'price',isAscending:false}});console.log('sort price status',t.s,String(JSON.stringify(t.j&&t.j.errors||'')).slice(0,200),(t.j&&t.j.data&&t.j.data.categoryGridRetrieve.products||[]).map(p=>p.price&&p.price.discountText).join(','));
           EOF
           node d.mjs
