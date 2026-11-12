@@ -49,6 +49,7 @@ export function toItem(o) {
   const media = Array.isArray(o.media) ? o.media : [];
   const pick = (r) => media.find((m) => m && m.role === r && m.type === 'IMAGE' && /^https:/.test(m.url || ''));
   const im = pick('PORTRAIT_BANNER') || pick('MASTER') || pick('GAMEHUB_COVER_ART') || media.find((m) => m && m.type === 'IMAGE' && /^https:/.test(m.url || ''));
+  const wide = pick('SIXTEEN_BY_NINE_BANNER') || pick('FOUR_BY_THREE_BANNER') || pick('MASTER');
   const id = String(o.id || o.productId || '');
   if (!id) return null;
   const kind = /^[A-Z]{2}\d{4}-/.test(id) ? 'product' : (o.__typename === 'Concept' ? 'concept' : 'product');
@@ -57,6 +58,7 @@ export function toItem(o) {
   return {
     id, name: String(o.name).slice(0, 120), pct, now, base,
     img: im ? im.url.split('?')[0] + '?w=360' : '',
+    wide: wide ? wide.url.split('?')[0] + '?w=520' : '',
     plat: [...new Set(plats)].join('/'),
     end: p.endTime ? String(p.endTime) : '',
     price: fmt(now), was: fmt(base),

@@ -756,6 +756,7 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 /* Yeni oyunlar / film ve etkinlik */
 .w[data-id=ps]{--w-bg:radial-gradient(circle at 92% -5%,rgba(0,168,255,.45),transparent 55%),linear-gradient(160deg,rgba(0,74,170,.97),rgba(4,18,64,.98));--acc:#4fc3ff}
 .w[data-id=ps] [data-a=key]{display:none}
+.w[data-id=ps] .cv.land:not(.cmp){grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .w[data-id=games]{--w-bg:radial-gradient(circle at 90% 0%,rgba(167,139,250,.32),transparent 55%),linear-gradient(160deg,rgba(54,22,112,.96),rgba(16,9,46,.98));--acc:#b79cff}
 .w[data-id=events]{--w-bg:radial-gradient(circle at 95% 0%,rgba(255,170,80,.3),transparent 55%),linear-gradient(160deg,rgba(120,50,16,.96),rgba(38,14,10,.98));--acc:#ffb454;--on:#3a1c08}
 .cvw .dv-tabs{margin-right:2px}
@@ -2654,11 +2655,11 @@ async function gamesSteam(sec='coming_soon'){
 const PS_FEED='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/veri-ps/ps.json';
 async function gamesPS(){
   const j=JSON.parse(await getText(PS_FEED+'?t='+Math.floor(Date.now()/6e5),12000));
-  const items=(j.items||[]).filter(x=>x&&x.name&&safeUrl(x.url)).map(x=>({title:x.name,img:x.img,badge:'-%'+x.pct,
+  const items=(j.items||[]).filter(x=>x&&x.name&&safeUrl(x.url)).map(x=>({title:x.name,img:x.wide||x.img,badge:'-%'+x.pct,img2:x.img,
     sub:x.price+' · eski '+x.was+(x.plat?' · '+x.plat:''),url:x.url}));
   if(!items.length)throw new Error('ps-bos');
   const mins=Math.max(0,Math.round((Date.now()-Date.parse(j.t))/6e4)),ago=mins<90?mins+' dk önce':Math.round(mins/60)+' sa önce';
-  return{items,land:false,foot:'PlayStation Store TR · en yüksek indirimler · güncelleme '+ago};
+  return{items,land:true,foot:'PlayStation Store TR · en yüksek indirimler · güncelleme '+ago};
 }
 async function gamesDeals(){
   const u='https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1&sortBy=Deal%20Rating&steamRating=75&pageSize=40';
@@ -2814,7 +2815,7 @@ function mountCovers(w,root,cfg){
 }
 const mountGames=(w,r)=>mountCovers(w,r,{id:'games',title:'Oyunlar',tabs:[['soon','Yakında'],['new','Yeni'],['top','Çok satan'],['sale','İndirim']],optional:()=>true,autoPage:()=>true,prov:()=>'rawg',landDefault:t=>t==='soon'&&!!getKey('rawg'),
   src:(t,k)=>t==='new'?gamesSteam('new_releases'):t==='top'?gamesSteam('top_sellers'):t==='sale'?gamesDeals():(k?gamesRAWG(k):Promise.any([gamesSteam(),gamesGOG()]))});
-const mountPS=(w,r)=>mountCovers(w,r,{id:'ps',title:'<span lang="en">PlayStation Store</span>',tabs:null,optional:()=>true,autoPage:()=>true,prov:()=>'ps',landDefault:()=>false,src:()=>gamesPS()});
+const mountPS=(w,r)=>mountCovers(w,r,{id:'ps',title:'<span lang="en">PlayStation Store</span>',tabs:null,optional:()=>true,autoPage:()=>true,prov:()=>'ps',landDefault:()=>true,src:()=>gamesPS()});
 const mountEvents=(w,r)=>mountCovers(w,r,{id:'events',title:'Vizyondaki Filmler',tabs:null,optional:()=>false,autoPage:()=>true,prov:()=>'tmdb',landDefault:()=>false,src:(t,k)=>filmsTMDB(k)});
 
 /* ---------- Haberler ---------- */
@@ -3729,7 +3730,7 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  daily:{title:'Ayet · Hadis · Esma',def:[3,1],mount:mountDaily},
  events:{title:'Vizyondaki Filmler',def:[3,2],mount:mountEvents},
  games:{title:'Oyunlar',def:[3,2],mount:mountGames},
- ps:{title:'PlayStation Store',def:[3,2],mount:mountPS},
+ ps:{title:'PlayStation Store',def:[3,3],mount:mountPS},
  weather:{title:'Hava Durumu',def:[2,1],mount:mountWeather},
  controls:{title:'Kontrol',def:[1,1],mount:mountControls},
  radio:{title:'Radyo',def:[3,1],mount:mountRadio},
@@ -3747,13 +3748,14 @@ try{Object.keys(localStorage).filter(k=>k.startsWith('pano.fb.')||k.startsWith('
 Object.keys(REG).forEach(id=>{if(!layout.find(l=>l.id===id))layout.push({id,w:REG[id].def[0],h:REG[id].def[1],hidden:id!=='controls'&&id!=='radio'&&id!=='ps'})});
 layout.forEach(l=>{if(l.id==='controls')l.hidden=false});
 if(LS.get('pano.controls.size',0)!==1){const c=layout.find(l=>l.id==='controls');if(c){c.w=1;c.h=1}LS.set('pano.controls.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Kontrol 1x1 olsun */   /* Düzenle düğmesi bu widget'ta: hiçbir zaman gizlenmez */
+if(LS.get('pano.ps.size',0)!==2){const c=layout.find(l=>l.id==='ps');if(c){c.w=3;c.h=3}LS.set('pano.ps.size',2);LS.set('pano.layout.v3',layout)}   /* tek seferlik: PlayStation widget'ı 4×2 olsun */
 const saveLayout=()=>LS.set('pano.layout.v3',layout);
 const items={};
 let cols=12,gap=14,cellW=150,cellH=150;
 
 /* Kontrol widget'ı 1 sütun olabilir; diğerleri en az 2. */
 /* Tablet (6 sütun): grafik, hava ve oyun widget'ları en az 3 sütun × 2 satır olsun */
-const TAB_MIN={radio:[3,2],tv:[3,2],weather:[3,2],games:[3,2]};
+const TAB_MIN={ps:[3,3],radio:[3,2],tv:[3,2],weather:[3,2],games:[3,2]};
 function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(id==='controls'?1:2,w,m))}
 /* Mobilde (4 sütun) hücreler küçük kalır; grafik, hava, namaz saatleri ve notlar için asgari yükseklik */
 const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,fx:3,notes:3,controls:2};
