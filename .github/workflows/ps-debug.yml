@@ -1,0 +1,25 @@
+name: ps-debug
+on: workflow_dispatch
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: incele
+        run: |
+          cat > d.mjs <<'EOF'
+          const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+          const r=await fetch('https://store.playstation.com/tr-tr/category/3f772501-f6f8-49b7-abac-874a88ca4897/1',{headers:{'user-agent':UA,'accept-language':'tr-TR,tr;q=0.9'}});
+          const t=await r.text();
+          console.log('len',t.length,'nextdata',/__NEXT_DATA__/.test(t),'basePrice',(t.match(/basePrice/g)||[]).length,'discountedPrice',(t.match(/discountedPrice/g)||[]).length);
+          const m=t.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+          if(m){const j=JSON.parse(m[1]);console.log('top',Object.keys(j),'props',Object.keys(j.props||{}),'pageProps',Object.keys((j.props||{}).pageProps||{}));
+            const ap=j.props&&j.props.apolloState;if(ap){const ks=Object.keys(ap);console.log('apollo keys',ks.length);const tc={};ks.forEach(k=>{const a=k.split(':')[0];tc[a]=(tc[a]||0)+1});console.log(JSON.stringify(tc));
+              const pk=ks.find(k=>/^Product:/.test(k));if(pk)console.log('sample',pk,JSON.stringify(ap[pk]).slice(0,900));
+              const ck=ks.find(k=>/^Concept:/.test(k));if(ck)console.log('sampleC',ck,JSON.stringify(ap[ck]).slice(0,900));}}
+          let i=t.indexOf('basePrice');for(let n=0;n<2&&i>=0;n++){console.log('CTX',t.slice(Math.max(0,i-300),i+300).replace(/\s+/g,' '));i=t.indexOf('basePrice',i+1)}
+          const sc=[...t.matchAll(/<script[^>]*?(?: id="([^"]+)")?[^>]*>/g)].map(x=>x[1]).filter(Boolean);console.log('script ids',sc.slice(0,15));
+          EOF
+          node d.mjs
