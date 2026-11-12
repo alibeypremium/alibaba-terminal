@@ -73,6 +73,12 @@ async function main() {
   const outDir = process.argv[2] || 'out';
   fs.mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString();
+  // Fiyat geçmişi: önceki ps-all.json'daki en düşük görülen fiyat (lo) devralınır; kayıt tarihi (since) korunur.
+  let prevLo = new Map(), since = stamp;
+  try {
+    const old = JSON.parse(fs.readFileSync(path.join(outDir, 'ps-all.json'), 'utf8'));
+    if (old && Array.isArray(old.g)) { since = old.since || old.t || stamp; for (const a of old.g) if (Number.isFinite(a[6])) prevLo.set(a[0], a[6]); }
+  } catch {}
 
   // 1) Çok satan indirimler (satış sırası korunur)
   const deals = [], seenD = new Set();
@@ -119,7 +125,7 @@ async function main() {
   console.log('yakında:', soon.length);
 
   if (deals.length || soon.length) {
-    fs.writeFileSync(path.join(outDir, 'ps.json'), JSON.stringify({ t: stamp, deals, soon }));
+    fs.writeFileSync(path.join(outDir, 'ps.json'), JSON.stringify({ t: stamp, since, deals, soon }));
     console.log('yazıldı: ps.json');
   } else console.log('::warning::PS Store: indirim/yakında listesi boş; ps.json yazılmadı.');
 
@@ -138,10 +144,16 @@ async function main() {
     console.log('katalog', label, 'toplam', total, '→ şimdiye kadar', all.size);
   }
   const rows = [...all.values()];
+  for (const r of rows) r.lo = Math.min(prevLo.has(r.id) ? prevLo.get(r.id) : r.now, r.now || Infinity);
   if (rows.length >= 3000) {
-    const g = rows.map((r) => [r.id, r.n, r.now, r.base, r.im, r.pl]);
-    fs.writeFileSync(path.join(outDir, 'ps-all.json'), JSON.stringify({ t: stamp, g }));
-    console.log('yazıldı: ps-all.json', rows.length, 'oyun');
+    const g = rows.map((r) => [r.id, r.n, r.now, r.base, r.im, r.pl, r.lo]);
+    fs.writeFileSync(path.join(outDir, 'ps-all.json'), JSON.stringify({ t: stamp, since, g }));
+    console.log('yazıldı: ps-all.json', rows.length, 'oyun, takip başlangıcı', since);
+    // indirim listesindeki oyunlara "en düşük fiyat" işareti (şimdiki fiyat = takip edilen en düşük fiyat)
+    let n = 0;
+    for (const r of deals) { const c = all.get(r.id); if (c && c.now > 0 && c.now <= c.lo && pct(c) > 0) { r.lo = 1; n++; } }
+    console.log('en düşük fiyatta (indirim listesi):', n);
+    fs.writeFileSync(path.join(outDir, 'ps.json'), JSON.stringify({ t: stamp, since, deals, soon }));
   } else console.log('::warning::PS Store: katalog eksik (' + rows.length + '); ps-all.json güncellenmedi (eski dosya korunur).');
 }
 

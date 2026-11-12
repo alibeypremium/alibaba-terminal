@@ -745,14 +745,14 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 .bk-b.on{background:#0a84ff;border-color:transparent;color:#fff}
 .bk-b[hidden]{display:none}
 .bk-msg{min-height:1.4em;font-size:13px;line-height:1.45;color:var(--fg)}
-.ctl{--g:8px;flex:1;min-height:0;container-type:size;display:grid;grid-template-columns:repeat(2,max-content);justify-content:center;align-content:center;gap:var(--g)}   /* her sırada 2 kare düğme */
-.ctl button{appearance:none;width:min(calc((100cqw - var(--g)) / 2),calc((100cqh - var(--g)) / 2));aspect-ratio:1;min-width:0;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;border-radius:16px;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .15s,background .2s}
+.ctl{--g:8px;flex:1;min-height:0;container-type:size;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:var(--g)}   /* 3x3 ızgara: her sırada en çok 3 kare düğme, eksik sıra ortalanır */
+.ctl button{appearance:none;flex:none;width:min(calc((100cqw - 2*var(--g)) / 3),calc((100cqh - 2*var(--g)) / 3));aspect-ratio:1;min-width:0;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;border-radius:12px;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .15s,background .2s}
 .ctl button:hover{background:rgba(255,255,255,.22)}
 .ctl button:active{transform:scale(.96)}
 .ctl button.on{background:#0a84ff;border-color:transparent}
-.ctl button svg{width:50%;max-width:30px;height:auto;aspect-ratio:1;display:block}
+.ctl button svg{width:54%;max-width:26px;height:auto;aspect-ratio:1;display:block}
 /* 1x1 (dar) kutuda: başlık gizlenir, üç düğme alt alta dizilir */
-@container (max-width:210px){.ctlw .hd{display:none}.ctlw .ctl{--g:6px}.ctlw .ctl button{border-radius:13px}}
+@container (max-width:210px){.ctlw .hd{display:none}.ctlw .ctl{--g:5px}.ctlw .ctl button{border-radius:10px}}
 
 /* Yeni oyunlar / film ve etkinlik */
 .w[data-id=ps]{--w-bg:radial-gradient(circle at 92% -5%,rgba(0,168,255,.45),transparent 55%),linear-gradient(160deg,rgba(0,74,170,.97),rgba(4,18,64,.98));--acc:#4fc3ff}
@@ -770,6 +770,7 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 .cv-st{position:absolute;right:6px;top:6px;z-index:2;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:15px;line-height:1;cursor:pointer;transition:transform .15s,background .2s}
 .cv-st:hover{transform:scale(1.12);background:rgba(0,0,0,.75)}
 .cv-st.on{color:#ffd24a}
+.cv-lo{position:absolute;left:7px;top:31px;z-index:1;padding:2px 8px;border-radius:999px;background:linear-gradient(180deg,#ffd75e,#f2a900);color:#3a2600;font-size:10px;font-weight:800;letter-spacing:.01em;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .cv-sf{margin:0 0 6px;padding:0 2px}
 .cv-sf input{padding:7px 12px}
 .cv-sf .yt-go{padding:0;width:32px;flex:none;background:rgba(255,255,255,.14);color:#fff;font-size:14px}
@@ -961,6 +962,8 @@ const I={
  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+ full:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+ fullx:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
  prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>',
  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>',
@@ -2679,23 +2682,24 @@ const psPct=r=>r.base>0&&r.now<r.base?Math.round((1-r.now/r.base)*100):0;
 const psImg=im=>im?PS_IMG+im+'?w=360':'';
 const psAgo=t=>{const m=Math.max(0,Math.round((Date.now()-Date.parse(t))/6e4));return m<90?m+' dk önce':Math.round(m/60)+' sa önce'};
 /* Katalog satırı → kart. r: {id,n,now,base,im,pl,pre} */
-const psItem=r=>{const pc=psPct(r);return{id:r.id,title:r.n,img:psImg(r.im),url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(r.id),
+const psAged=since=>!!since&&Date.now()-Date.parse(since)>=7*864e5;   /* geçmiş en az 7 gündür tutuluyorsa "en düşük" rozeti güvenilir sayılır */
+const psItem=(r,aged)=>{const pc=psPct(r);return{low:!!aged&&pc>0&&(r.lo===1||(r.lo>1&&r.now<=r.lo)),id:r.id,title:r.n,img:psImg(r.im),url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(r.id),
   date:r.d||'',badge:pc?'-%'+pc:(r.pre&&!r.d?'Ön sipariş':''),sub:!r.base?'Fiyat yok':pc?psTL(r.now)+' · eski '+psTL(r.base):psTL(r.now)+(r.pre?' · ön sipariş':''),pc}};
 const psTr=t=>String(t).toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
 async function psCatalog(){const j=await psFile('ps-all.json',6*3600e3);
-  if(!j._m){j._m=new Map();(j.g||[]).forEach(a=>j._m.set(a[0],{id:a[0],n:a[1],now:a[2],base:a[3],im:a[4],pl:a[5],k:psTr(a[1])}))}return j}
+  if(!j._m){j._m=new Map();(j.g||[]).forEach(a=>j._m.set(a[0],{id:a[0],n:a[1],now:a[2],base:a[3],im:a[4],pl:a[5],lo:a[6],k:psTr(a[1])}))}return j}
 const psWish={get:()=>{const a=LS.get('pano.ps.wish',[]);return Array.isArray(a)?a.filter(x=>x&&x.id):[]},set:a=>LS.set('pano.ps.wish',a)};
 async function gamesPS(tab){
   if(tab==='wish'){
     const w=psWish.get();let cat=null;try{cat=await psCatalog()}catch(e){}
-    const items=w.map(x=>{const r=cat&&cat._m.get(x.id);return r?psItem(r):{id:x.id,title:x.n,img:x.i?psImg(x.i):'',url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(x.id),badge:'',sub:'',pc:0}})
+    const items=w.map(x=>{const r=cat&&cat._m.get(x.id);return r?psItem(r,psAged(cat.since)):{id:x.id,title:x.n,img:x.i?psImg(x.i):'',url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(x.id),badge:'',sub:'',pc:0}})
       .map((x,i)=>({x,i})).sort((a,b)=>(b.x.pc>0)-(a.x.pc>0)||b.x.pc-a.x.pc||a.i-b.i).map(o=>o.x);
     const n=items.filter(x=>x.pc>0).length;
     return{items,land:false,foot:items.length?('İstek listem · '+items.length+' oyun'+(n?' · '+n+' tanesi indirimde':'')):'İstek listem'};
   }
   const j=await psFile('ps.json',10*60e3);
   const rows=(tab==='soon'?j.soon:j.deals)||[];
-  const items=rows.filter(r=>r&&r.n&&r.id).map(psItem);
+  const aged=psAged(j.since),items=rows.filter(r=>r&&r.n&&r.id).map(r=>psItem(r,aged));
   if(!items.length)throw new Error('ps-bos');
   return{items,land:false,foot:'PlayStation Store TR · '+(tab==='soon'?'yakında çıkacaklar · çıkış tarihine göre':'çok satan indirimler')+' · güncelleme '+psAgo(j.t)};
 }
@@ -2705,7 +2709,7 @@ async function psSearch(q){
   const hits=[];for(const r of cat._m.values()){let ok=true;for(const x of ws)if(!r.k.includes(x)){ok=false;break}
     if(ok)hits.push({r,sc:(r.k.startsWith(k)?3:r.k.includes(' '+k)?2:1)*10+(psPct(r)>0?1:0)})}
   hits.sort((a,b)=>b.sc-a.sc||a.r.n.length-b.r.n.length);
-  const items=hits.slice(0,60).map(h=>psItem(h.r));
+  const aged=psAged(cat.since),items=hits.slice(0,60).map(h=>psItem(h.r,aged));
   return{items,land:false,foot:hits.length?('"'+q.trim()+'" · '+hits.length+' sonuç'+(hits.length>60?' (ilk 60)':'')+' · katalog '+psAgo(cat.t)):'"'+q.trim()+'" için sonuç yok',empty:'Sonuç bulunamadı.'};
 }
 async function gamesDeals(){
@@ -2759,7 +2763,7 @@ function mountCovers(w,root,cfg){
     else e.target.style.visibility='hidden';
   },true);
   let wishSet=new Set(cfg.wish?cfg.wish.get().map(x=>x.id):[]);
-  const card=x=>'<a class="cv-c" href="'+esc(safeUrl(x.url)||'#')+'" target="_blank" rel="noopener noreferrer"><div class="cv-img">'+(safeUrl(x.img)?'<img src="'+esc(safeUrl(x.img))+'"'+(safeUrl(x.img2)?' data-fb="'+esc(safeUrl(x.img2))+'"':'')+' alt="" loading="lazy" referrerpolicy="no-referrer">':'')+(x.date?'<span class="cv-date">'+fmtD(x.date)+'</span>':x.badge?'<span class="cv-date">'+esc(x.badge)+'</span>':'')+(cfg.wish&&x.id?'<span class="cv-st'+(wishSet.has(x.id)?' on':'')+'" role="button" tabindex="0" data-a="st" data-id="'+esc(x.id)+'" title="İstek listesi" aria-label="İstek listesine ekle/çıkar">'+(wishSet.has(x.id)?'★':'☆')+'</span>':'')+'</div><div class="cv-t">'+esc(x.title)+'</div>'+(x.sub?'<div class="cv-s">'+esc(x.sub)+'</div>':'')+'</a>';
+  const card=x=>'<a class="cv-c" href="'+esc(safeUrl(x.url)||'#')+'" target="_blank" rel="noopener noreferrer"><div class="cv-img">'+(safeUrl(x.img)?'<img src="'+esc(safeUrl(x.img))+'"'+(safeUrl(x.img2)?' data-fb="'+esc(safeUrl(x.img2))+'"':'')+' alt="" loading="lazy" referrerpolicy="no-referrer">':'')+(x.date?'<span class="cv-date">'+fmtD(x.date)+'</span>':x.badge?'<span class="cv-date">'+esc(x.badge)+'</span>':'')+(x.low?'<span class="cv-lo" title="Takip ettiğimiz en düşük fiyat">En düşük fiyat</span>':'')+(cfg.wish&&x.id?'<span class="cv-st'+(wishSet.has(x.id)?' on':'')+'" role="button" tabindex="0" data-a="st" data-id="'+esc(x.id)+'" title="İstek listesi" aria-label="İstek listesine ekle/çıkar">'+(wishSet.has(x.id)?'★':'☆')+'</span>':'')+'</div><div class="cv-t">'+esc(x.title)+'</div>'+(x.sub?'<div class="cv-s">'+esc(x.sub)+'</div>':'')+'</a>';
   const setFoot=t=>{foot.textContent=t||''};
   const clear=()=>{items=[];pages=1;pgEl.hidden=true};
   /* Kutuya tam sığan satır kadar kart göster; yarım görünen kart olmasın. Kalanlar sonraki sayfada. */
@@ -3601,12 +3605,29 @@ function mountNotes(w,root){
 }
 
 /* ---------- Kontrol widget'ı (Sade · Tema · Düzenle) ---------- */
+/* Tam ekran: Kontrol'deki düğme ya da klavyede \" tuşu (Shift+2 / Shift+'); yazı yazılırken çalışmaz. */
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+const isFS=()=>!!fsEl();
+const fsOK=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+function toggleFS(){
+  try{
+    if(isFS()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+    else{const d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;if(f){const r=f.call(d);r&&r.catch&&r.catch(()=>{})}}
+  }catch{}
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='"'||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+  const t=e.target;if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))return;
+  if(!fsOK())return;e.preventDefault();toggleFS();
+});
 function mountControls(w,root){
   root.innerHTML='<div class="nw ctlw">'+hd('controls','Kontrol')+'<div class="ctl">'+
     '<button type="button" id="liteBtn" aria-pressed="false" title="Sade mod: arka plan animasyonunu durdur" aria-label="Sade mod">'+I.leaf+'</button>'+
     '<button type="button" id="themeBtn" title="Açık / koyu tema" aria-label="Temayı değiştir">'+I.half+'</button>'+
     '<button type="button" id="bkBtn" title="Yedekle ve aktar" aria-label="Yedekle ve aktar">'+I.save+'</button>'+
-    '<button type="button" id="editBtn" title="Düzenle" aria-label="Düzenle">'+I.pencil+'</button></div></div>';
+    '<button type="button" id="editBtn" title="Düzenle" aria-label="Düzenle">'+I.pencil+'</button>'+
+    (fsOK()?'<button type="button" id="fsBtn" title="Tam ekran (\" tuşu)" aria-label="Tam ekran">'+I.full+'</button>':'')+'</div></div>';
+  const fb=$('#fsBtn',root);if(fb){fb.addEventListener('click',toggleFS);const sync=()=>{const on=isFS();fb.innerHTML=on?I.fullx:I.full;fb.classList.toggle('on',on)};document.addEventListener('fullscreenchange',sync);document.addEventListener('webkitfullscreenchange',sync);w._dispose=(p=>()=>{document.removeEventListener('fullscreenchange',sync);document.removeEventListener('webkitfullscreenchange',sync);p&&p()})(w._dispose);sync()}
   /* Düğme durumlarını mevcut ayarlarla eşitle (olaylar belge düzeyinde dinleniyor). */
   const on=document.documentElement.dataset.lite==='1';
   $('#liteBtn',root).classList.toggle('on',on);$('#liteBtn',root).setAttribute('aria-pressed',on?'true':'false');
@@ -3696,7 +3717,7 @@ function mountRadio(w,root){
     {k:'ht',name:'Habertürk',q:[],re:/^$/,c:'#d71920',fix:['https://haberturkradyo.radyotvonline.net/haberturkradyo'],logo:'https://yt3.ggpht.com/SqaSrx9HvlbnpXqfrsyqJOpL3uHHi3GQ3htT3gPdP3S8yebiy4iVPrZ4Ai1wQnNoHv7aUBLIeEE=s96-c-k-c0x00ffffff-no-rj'},
     /* NTV Radyo: dizindeki kayıtlar yalnızca http (https sayfada açılmaz), biri de .pls. Resmî https HLS yayını sabit verildi. */
     {k:'ntv',name:'NTV',q:[],re:/^$/,c:'#2f7fd1',logo:'https://yt3.ggpht.com/wwJNZ3QBI5ojqIlQvsInUIwIuSQH-lhQaqv_-WR7gYvEqa6WNEfpdiTls8z30QIxQMFbTBUQ0Q=s96-c-k-c0x00ffffff-no-rj',fix:['https://dygedge.radyotvonline.net/ntvradyo/playlist.m3u8']},
-    {k:'odtu',name:'ODTÜ',q:[],re:/^$/,c:'#ff9d1a',fix:['https://stream.radyoodtu.com.tr/;','https://stream3.radyoodtu.com.tr:8000/;'],mono:'ODTÜ',logo:'https://tr.wikipedia.org/wiki/Special:FilePath/Orta_Do%C4%9Fu_Teknik_%C3%9Cniversitesi.png?width=96',fit:1}   /* ODTÜ'nün amblemi (Vikipedi): beyaz zeminli resim, yuvarlak etiketi dolduracak şekilde büyütülüp kırpılır; yüklenmezse baş harf rozeti */
+    {k:'odtu',name:'ODTÜ',q:[],re:/^$/,c:'#ff9d1a',fix:['https://stream3.radyoodtu.com.tr:8000/;','https://stream.radyoodtu.com.tr/;'],mono:'ODTÜ',logo:'https://tr.wikipedia.org/wiki/Special:FilePath/Orta_Do%C4%9Fu_Teknik_%C3%9Cniversitesi.png?width=96',fit:1}   /* ODTÜ'nün amblemi (Vikipedi): beyaz zeminli resim, yuvarlak etiketi dolduracak şekilde büyütülüp kırpılır; yüklenmezse baş harf rozeti */
   ];
   const norm=s=>({id:s.stationuuid,name:(s.name||'').trim().replace(/\s+/g,' '),url:s.url_resolved||s.url,alt:s.url,fav:s.favicon||'',br:s.bitrate||0,clk:s.clickcount||0});
   const up=u=>secure?String(u).replace(/^http:/i,'https:'):u;
@@ -3713,7 +3734,7 @@ function mountRadio(w,root){
     '<div class="rd-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"></div>'+'</div></div>';
   let hls=null,gen=0;
   const killHls=()=>{gen++;if(hls){try{hls.destroy()}catch{}hls=null}};
-  w._dispose=()=>{killHls();try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
+  w._dispose=()=>{killHls();clearTimeout(stT);try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
   const $r=s=>$(s,root),disc=$r('.rd-disc'),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
   rng.value=Math.round(vol*100);
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
@@ -3741,13 +3762,24 @@ function mountRadio(w,root){
     const s=map[c.k];
     if(!s){state='na';audio.pause();paintNow();return}
     state='load';paintNow();
-    tryIdx=0;start(s);
+    tryIdx=0;retry=0;quiet=0;lastCT=-1;start(s);
   }
-  let tryIdx=0;
+  let tryIdx=0,stT=0,retry=0,lastCT=-1,quiet=0,ign=0;
+  /* Canlı yayında tarayıcı yalnızca ~2 sn tampon tutar; ağda küçük bir aksama yayını kalıcı olarak dondurabiliyor.
+     Bu yüzden takılma (bekleme/durgunluk/ilerlemeyen saat) fark edilince aynı yayına otomatik yeniden bağlanılır. */
+  const clearWd=()=>{clearTimeout(stT);stT=0};
+  const armWd=ms=>{clearWd();stT=setTimeout(()=>{stT=0;if(state==='load'||state==='play')reconnect()},ms)};
+  function reconnect(){
+    const s=cur&&map[cur.k];if(!s)return;
+    const list=s.urls&&s.urls.length?s.urls:[s.url];
+    if(retry>=10){clearWd();state='err';paintNow();return}
+    retry++;if(retry>1&&retry%2===1)tryIdx=(tryIdx+1)%list.length;   /* her ikinci denemede sıradaki adrese geç */
+    state='load';quiet=0;lastCT=-1;paintNow();start(s);
+  }
   function start(s){
     const list=s.urls&&s.urls.length?s.urls:[s.url];
     const u=list[tryIdx];
-    killHls();audio.volume=vol;
+    killHls();audio.volume=vol;ign=Date.now();armWd(12000);
     /* HLS (.m3u8): hls.js destekleniyorsa o çalar (canPlayType Chrome'da "maybe" deyip yine de açmıyor);
        MSE olmayan iPhone Safari'de yerel HLS kullanılır. */
     if(/\.m3u8(\?|$)/i.test(u)){
@@ -3768,16 +3800,22 @@ function mountRadio(w,root){
   function fail(){
     const s=cur&&map[cur.k];if(!s)return;
     const list=s.urls&&s.urls.length?s.urls:[s.url];
+    if(state==='play'){reconnect();return}
     if(state==='load'&&tryIdx<list.length-1){tryIdx++;start(s);return}
-    if(state==='load'||state==='play'){state='err';paintNow()}
+    if(state==='load')reconnect()
   }
-  audio.addEventListener('playing',()=>{state='play';paintNow()});
-  audio.addEventListener('waiting',()=>{if(state==='play'){state='load';paintNow()}});
+  audio.addEventListener('playing',()=>{clearWd();retry=0;quiet=0;state='play';paintNow()});
+  audio.addEventListener('waiting',()=>{if(state==='play'){state='load';paintNow();armWd(4000)}});
+  audio.addEventListener('stalled',()=>{if((state==='play'||state==='load')&&!stT)armWd(8000)});
   audio.addEventListener('error',()=>{if(cur&&map[cur.k])fail()});
-  audio.addEventListener('pause',()=>{if(state==='play'||state==='load'){state='idle';paintNow()}});
+  audio.addEventListener('pause',()=>{if(Date.now()-ign<1000)return;if(state==='play'||state==='load'){clearWd();state='idle';paintNow()}});
+  every(w,()=>{   /* çalarken saat ilerlemiyorsa (10 sn) yayın donmuştur */
+    if(state!=='play'||audio.paused)return;
+    const t=audio.currentTime;if(t===lastCT){if(++quiet>=2)reconnect()}else{quiet=0;lastCT=t}
+  },5000);
   pl.addEventListener('click',()=>{
     if(!cur){play(CH[0]);return}
-    if(state==='play'||state==='load'){killHls();audio.pause();state='idle';paintNow()}else play(cur);
+    if(state==='play'||state==='load'){clearWd();killHls();audio.pause();state='idle';paintNow()}else play(cur);
   });
   const step=d=>{const i=cur?CH.findIndex(c=>c.k===cur.k):-1;play(CH[(i+d+CH.length)%CH.length])};
   $r('.rd-pv').addEventListener('click',()=>step(-1));$r('.rd-nx').addEventListener('click',()=>step(1));
