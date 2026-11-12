@@ -1,0 +1,19 @@
+name: dbg
+on: workflow_dispatch
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: |
+          cat > d.mjs <<'X'
+          const id='EP1004-PPSA01547_00-GTAVISTANDARD001';
+          const r=await fetch('https://store.playstation.com/tr-tr/product/'+id,{headers:{'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0','accept-language':'tr-TR'}});
+          const t=await r.text();console.log('status',r.status,t.length);
+          const m=t.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+          console.log('next',!!m);
+          for(const k of ['releaseDate','release_date','"date"']){for(const x of t.matchAll(new RegExp('.{60}'+k+'.{80}','g'))){console.log(k,x[0]);break}}
+          X
+          node d.mjs
