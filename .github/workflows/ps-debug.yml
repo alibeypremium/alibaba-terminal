@@ -1,0 +1,36 @@
+name: ps-debug
+on: workflow_dispatch
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: incele
+        run: |
+          cat > d.mjs <<'EOF'
+          const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+          const h='9845afc0dbaab4965f6563fffc703f588c8e76792000e8610843b8d3ee9c4c09';
+          const q=async(cat,v2)=>{
+            const vars={id:cat,pageArgs:{size:5,offset:0},sortBy:null,filterBy:[],facetOptions:[],...v2};
+            const u='https://web.np.playstation.com/api/graphql/v1/op?operationName=categoryGridRetrieve&variables='+encodeURIComponent(JSON.stringify(vars))+'&extensions='+encodeURIComponent(JSON.stringify({persistedQuery:{version:1,sha256Hash:h}}));
+            const r=await fetch(u,{headers:{'user-agent':UA,accept:'application/json','content-type':'application/json','x-psn-store-locale-override':'tr-TR',origin:'https://store.playstation.com',referer:'https://store.playstation.com/','accept-language':'tr-TR,tr;q=0.9'}});
+            const j=await r.json().catch(()=>null);return {s:r.status,g:j&&j.data&&j.data.categoryGridRetrieve,e:j&&j.errors};
+          };
+          const sh=(x)=>String(JSON.stringify(x)).slice(0,700);
+          const ids={deals:'3f772501-f6f8-49b7-abac-874a88ca4897',ps5:'4cbf39e2-5749-4970-ba81-93a489e4570c',ps4:'44d8bb20-653e-431e-8ad0-c0a365f68d2f',soon:'12a53448-110a-4e34-b34b-ca8c2c7b0ea3',newg:'e1699f77-77e1-43ca-a296-26d08aa45a1c',preorder:'6bfba3fa-5273-4a3d-b0e4-ff1ae7e1a1ac',all:'28c6c70a-f1e7-4d53-9b8a-2c3f4b3d2c2f'};
+          for(const [k,id] of Object.entries(ids)){
+            try{const {s,g,e}=await q(id);
+            console.log('CAT',k,s,g?('total '+(g.pageInfo&&g.pageInfo.totalCount)+' | '+(g.products||[]).map(p=>p.name+' ['+p.localizedStoreDisplayClassification+']').join(' ; ')):sh(e));
+            if(g&&k!=='deals')console.log('  FACETS',(g.facetOptions||[]).map(f=>f.name).join(','));}catch(e){console.log('CAT',k,'hata',e.message)}
+          }
+          const {g}=await q(ids.ps5,{facetOptions:[]});
+          if(g)(g.facetOptions||[]).forEach(f=>console.log('FACET',f.name,'|',(f.options||f.values||[]).slice(0,14).map(o=>(o.key||o.value||o.id||'')+':'+(o.count||'')+(o.displayName?'('+o.displayName+')':'')).join(' ')));
+          if(g)console.log('SORTS',sh(g.sortingOptions||'yok'),'keys',Object.keys(g).join(','));
+          for(const u of ['https://store.playstation.com/tr-tr/pages/latest','https://store.playstation.com/tr-tr/pages/browse','https://store.playstation.com/tr-tr/pages/deals']){
+            const r=await fetch(u,{headers:{'user-agent':UA,'accept-language':'tr-TR'}});const t=await r.text();
+            const c=[...new Set([...t.matchAll(/\/category\/([0-9a-f-]{36})/g)].map(x=>x[1]))];console.log('PAGE',u.split('/').pop(),r.status,c.join(' '));
+          }
+          EOF
+          node d.mjs
