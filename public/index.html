@@ -766,6 +766,14 @@ button.tm-r.sel .up{color:#05521f}button.tm-r.sel .dn{color:#7a0f08}
 .cv.h .cv-t{display:-webkit-box;-webkit-line-clamp:2;font-size:12.5px;line-height:1.22}
 .cv.h .cv-s{display:block;white-space:nowrap;font-size:11px;color:rgba(255,255,255,.82)}
 .cv.h .cv-date{z-index:1;left:7px;top:7px}
+.cv-st{position:absolute;right:6px;top:6px;z-index:2;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:15px;line-height:1;cursor:pointer;transition:transform .15s,background .2s}
+.cv-st:hover{transform:scale(1.12);background:rgba(0,0,0,.75)}
+.cv-st.on{color:#ffd24a}
+.cv-sf{margin:0 0 6px;padding:0 2px}
+.cv-sf input{padding:7px 12px}
+.cv-sf .yt-go{padding:0;width:32px;flex:none;background:rgba(255,255,255,.14);color:#fff;font-size:14px}
+.w[data-id=ps] .hd .ttl{display:none}
+.w[data-id=ps] .hd .sp{flex:0 0 0}.w[data-id=ps] .hd .dv-tabs{margin-left:auto}
 .w[data-id=games]{--w-bg:radial-gradient(circle at 90% 0%,rgba(167,139,250,.32),transparent 55%),linear-gradient(160deg,rgba(54,22,112,.96),rgba(16,9,46,.98));--acc:#b79cff}
 .w[data-id=events]{--w-bg:radial-gradient(circle at 95% 0%,rgba(255,170,80,.3),transparent 55%),linear-gradient(160deg,rgba(120,50,16,.96),rgba(38,14,10,.98));--acc:#ffb454;--on:#3a1c08}
 .cvw .dv-tabs{margin-right:2px}
@@ -953,6 +961,7 @@ const I={
  key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></svg>',
  file:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
  ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
  prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>',
  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>',
@@ -2660,15 +2669,45 @@ async function gamesSteam(sec='coming_soon'){
   return{items,land:false,foot:S.foot,note:j._stale?'Çevrimdışı kopya ('+ago(new Date(j._stale).toISOString())+')':''};
 }
 /* İndirimler: CheapShark (anahtarsız, Steam puanı + Metacritic verir) ile Steam vitrinindeki indirim listesi aynı anda denenir; hangisi önce gelirse o gösterilir. */
-/* PlayStation Store TR indirimleri: GitHub Action (ps.yml, 3 saatte bir) ps.json üretir; burada yalnızca o dosya okunur. */
-const PS_FEED='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/veri-ps/ps.json';
-async function gamesPS(){
-  const j=JSON.parse(await getText(PS_FEED+'?t='+Math.floor(Date.now()/6e5),12000));
-  const items=(j.items||[]).filter(x=>x&&x.name&&safeUrl(x.url)).map(x=>({title:x.name,img:x.img||x.wide,badge:'-%'+x.pct,img2:x.wide,
-    sub:x.price+' · eski '+x.was,url:x.url}));
+/* PlayStation Store TR: GitHub Action (ps.yml, 6 saatte bir) iki dosya üretir: ps.json (indirim + yakında) ve ps-all.json (tüm PS5/PS4 kataloğu; arama + istek listesi). */
+const PS_BASE='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/veri-ps/',PS_IMG='https://image.api.playstation.com/';
+const psMemo={};
+const psFile=(f,ttl)=>{const m=psMemo[f];if(m&&Date.now()-m.t<ttl)return m.p;
+  const p=getText(PS_BASE+f+'?t='+Math.floor(Date.now()/6e5),f==='ps-all.json'?30000:12000).then(t=>JSON.parse(t));
+  psMemo[f]={t:Date.now(),p};p.catch(()=>{if(psMemo[f]&&psMemo[f].p===p)delete psMemo[f]});return p};
+const psTL=n=>Number(n).toLocaleString('tr-TR')+' TL';
+const psPct=r=>r.base>0&&r.now<r.base?Math.round((1-r.now/r.base)*100):0;
+const psImg=im=>im?PS_IMG+im+'?w=360':'';
+const psAgo=t=>{const m=Math.max(0,Math.round((Date.now()-Date.parse(t))/6e4));return m<90?m+' dk önce':Math.round(m/60)+' sa önce'};
+/* Katalog satırı → kart. r: {id,n,now,base,im,pl,pre} */
+const psItem=r=>{const pc=psPct(r);return{id:r.id,title:r.n,img:psImg(r.im),url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(r.id),
+  badge:pc?'-%'+pc:(r.pre?'Ön sipariş':''),sub:!r.base?'Fiyat yok':pc?psTL(r.now)+' · eski '+psTL(r.base):psTL(r.now),pc}};
+const psTr=t=>String(t).toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+async function psCatalog(){const j=await psFile('ps-all.json',6*3600e3);
+  if(!j._m){j._m=new Map();(j.g||[]).forEach(a=>j._m.set(a[0],{id:a[0],n:a[1],now:a[2],base:a[3],im:a[4],pl:a[5],k:psTr(a[1])}))}return j}
+const psWish={get:()=>{const a=LS.get('pano.ps.wish',[]);return Array.isArray(a)?a.filter(x=>x&&x.id):[]},set:a=>LS.set('pano.ps.wish',a)};
+async function gamesPS(tab){
+  if(tab==='wish'){
+    const w=psWish.get();let cat=null;try{cat=await psCatalog()}catch(e){}
+    const items=w.map(x=>{const r=cat&&cat._m.get(x.id);return r?psItem(r):{id:x.id,title:x.n,img:x.i?psImg(x.i):'',url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(x.id),badge:'',sub:'',pc:0}})
+      .map((x,i)=>({x,i})).sort((a,b)=>(b.x.pc>0)-(a.x.pc>0)||b.x.pc-a.x.pc||a.i-b.i).map(o=>o.x);
+    const n=items.filter(x=>x.pc>0).length;
+    return{items,land:false,foot:items.length?('İstek listem · '+items.length+' oyun'+(n?' · '+n+' tanesi indirimde':'')):'İstek listem'};
+  }
+  const j=await psFile('ps.json',10*60e3);
+  const rows=(tab==='soon'?j.soon:j.deals)||[];
+  const items=rows.filter(r=>r&&r.n&&r.id).map(psItem);
   if(!items.length)throw new Error('ps-bos');
-  const mins=Math.max(0,Math.round((Date.now()-Date.parse(j.t))/6e4)),ago=mins<90?mins+' dk önce':Math.round(mins/60)+' sa önce';
-  return{items,land:false,foot:'PlayStation Store TR · en yüksek indirimler · güncelleme '+ago};
+  return{items,land:false,foot:'PlayStation Store TR · '+(tab==='soon'?'yakında çıkacaklar · çıkış tarihine göre':'çok satan indirimler')+' · güncelleme '+psAgo(j.t)};
+}
+async function psSearch(q){
+  const cat=await psCatalog(),k=psTr(q),ws=k.split(' ').filter(Boolean);
+  if(!ws.length)return{items:[],land:false,foot:''};
+  const hits=[];for(const r of cat._m.values()){let ok=true;for(const x of ws)if(!r.k.includes(x)){ok=false;break}
+    if(ok)hits.push({r,sc:(r.k.startsWith(k)?3:r.k.includes(' '+k)?2:1)*10+(psPct(r)>0?1:0)})}
+  hits.sort((a,b)=>b.sc-a.sc||a.r.n.length-b.r.n.length);
+  const items=hits.slice(0,60).map(h=>psItem(h.r));
+  return{items,land:false,foot:hits.length?('"'+q.trim()+'" · '+hits.length+' sonuç'+(hits.length>60?' (ilk 60)':'')+' · katalog '+psAgo(cat.t)):'"'+q.trim()+'" için sonuç yok',empty:'Sonuç bulunamadı.'};
 }
 async function gamesDeals(){
   const u='https://www.cheapshark.com/api/1.0/deals?storeID=1&onSale=1&sortBy=Deal%20Rating&steamRating=75&pageSize=40';
@@ -2709,10 +2748,10 @@ async function filmsTMDB(key){
 function mountCovers(w,root,cfg){
   let tab=cfg.tabs?LS.get('pano.cv.'+cfg.id,cfg.tabs[0][0]):'';
   if(cfg.tabs&&!cfg.tabs.find(t=>t[0]===tab))tab=cfg.tabs[0][0];
-  let showKey=false,seq=0;const cache={};
+  let showKey=false,seq=0,sq='',srTimer=0;const cache={};
   let items=[],land=false,page=0,pages=1,lastWheel=0;
   const tabsHtml=()=>cfg.tabs?'<div class="dv-tabs" role="tablist">'+cfg.tabs.map(t=>'<button type="button" role="tab" aria-selected="'+(t[0]===tab)+'" class="'+(t[0]===tab?'on':'')+'" data-t="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>':'';
-  root.innerHTML='<div class="nw cvw"><div class="hd">'+logo(cfg.id)+'<span class="ttl">'+cfg.title+'</span><span class="sp"></span><span id="cvt" style="display:contents">'+tabsHtml()+'</span><button class="ibtn" type="button" data-a="key" title="API anahtarı" aria-label="API anahtarı">'+I.key+'</button><button class="ibtn" type="button" data-a="ref" aria-label="Yenile">'+I.refresh+'</button></div><div class="cvb" id="cvb"></div><div class="foot cvf"><span class="cvf-t" id="cvf"></span><span class="pg" id="cvpg" hidden></span></div></div>';
+  root.innerHTML='<div class="nw cvw"><div class="hd">'+logo(cfg.id)+'<span class="ttl">'+cfg.title+'</span><span class="sp"></span><span id="cvt" style="display:contents">'+tabsHtml()+'</span>'+(cfg.search?'<button class="ibtn" type="button" data-a="sr" title="Ara" aria-label="Ara">'+I.search+'</button>':'')+'<button class="ibtn" type="button" data-a="key" title="API anahtarı" aria-label="API anahtarı">'+I.key+'</button><button class="ibtn" type="button" data-a="ref" aria-label="Yenile">'+I.refresh+'</button></div>'+(cfg.search?'<form class="yt-in cv-sf" id="cvs" hidden><input type="search" autocomplete="off" spellcheck="false" placeholder="Oyun ara…" aria-label="Oyun ara"><button class="yt-go" type="button" data-a="sx" aria-label="Aramayı kapat">✕</button></form>':'')+'<div class="cvb" id="cvb"></div><div class="foot cvf"><span class="cvf-t" id="cvf"></span><span class="pg" id="cvpg" hidden></span></div></div>';
   const body=$('#cvb',root),foot=$('#cvf',root),pgEl=$('#cvpg',root);
   body.addEventListener('error',e=>{
     if(e.target.tagName!=='IMG')return;
@@ -2720,7 +2759,8 @@ function mountCovers(w,root,cfg){
     if(f&&!e.target.dataset.tried){e.target.dataset.tried=1;e.target.src=f}   /* dikey afiş yoksa yatay kapsüle düş */
     else e.target.style.visibility='hidden';
   },true);
-  const card=x=>'<a class="cv-c" href="'+esc(safeUrl(x.url)||'#')+'" target="_blank" rel="noopener noreferrer"><div class="cv-img">'+(safeUrl(x.img)?'<img src="'+esc(safeUrl(x.img))+'"'+(safeUrl(x.img2)?' data-fb="'+esc(safeUrl(x.img2))+'"':'')+' alt="" loading="lazy" referrerpolicy="no-referrer">':'')+(x.date?'<span class="cv-date">'+fmtD(x.date)+'</span>':x.badge?'<span class="cv-date">'+esc(x.badge)+'</span>':'')+'</div><div class="cv-t">'+esc(x.title)+'</div>'+(x.sub?'<div class="cv-s">'+esc(x.sub)+'</div>':'')+'</a>';
+  let wishSet=new Set(cfg.wish?cfg.wish.get().map(x=>x.id):[]);
+  const card=x=>'<a class="cv-c" href="'+esc(safeUrl(x.url)||'#')+'" target="_blank" rel="noopener noreferrer"><div class="cv-img">'+(safeUrl(x.img)?'<img src="'+esc(safeUrl(x.img))+'"'+(safeUrl(x.img2)?' data-fb="'+esc(safeUrl(x.img2))+'"':'')+' alt="" loading="lazy" referrerpolicy="no-referrer">':'')+(x.date?'<span class="cv-date">'+fmtD(x.date)+'</span>':x.badge?'<span class="cv-date">'+esc(x.badge)+'</span>':'')+(cfg.wish&&x.id?'<span class="cv-st'+(wishSet.has(x.id)?' on':'')+'" role="button" tabindex="0" data-a="st" data-id="'+esc(x.id)+'" title="İstek listesi" aria-label="İstek listesine ekle/çıkar">'+(wishSet.has(x.id)?'★':'☆')+'</span>':'')+'</div><div class="cv-t">'+esc(x.title)+'</div>'+(x.sub?'<div class="cv-s">'+esc(x.sub)+'</div>':'')+'</a>';
   const setFoot=t=>{foot.textContent=t||''};
   const clear=()=>{items=[];pages=1;pgEl.hidden=true};
   /* Kutuya tam sığan satır kadar kart göster; yarım görünen kart olmasın. Kalanlar sonraki sayfada. */
@@ -2775,7 +2815,7 @@ function mountCovers(w,root,cfg){
   let apTimer=0;const apGen=w._gen;
   const arm=()=>{clearTimeout(apTimer);if(!cfg.autoPage)return;apTimer=setTimeout(()=>{
     if(w._gen!==apGen)return;   /* widget kaldırıldı */
-    if(cfg.autoPage(tab)&&!showKey&&pages>1&&!document.hidden){page=(page+1)%pages;applyPage()}
+    if(cfg.autoPage(tab)&&!sq&&!showKey&&pages>1&&!document.hidden){page=(page+1)%pages;applyPage()}
     arm();
   },60e3)};
   body.addEventListener('wheel',e=>{
@@ -2799,14 +2839,14 @@ function mountCovers(w,root,cfg){
   };
   async function load(force){
     const my=++seq,prov=cfg.prov(tab),key=getKey(prov);
-    if(showKey||(!key&&!cfg.optional(tab))){panel(prov,key);return}
-    const ck=tab+'|'+(key?1:0),c=cache[ck];
-    if(!force&&c&&Date.now()-c.t<30*60e3){showResult(c.r,false);return}
+    if(!sq&&(showKey||(!key&&!cfg.optional(tab)))){panel(prov,key);return}
+    const ck=tab+'|'+(key?1:0),c=cache[ck],nc=sq||(cfg.nocache&&cfg.nocache(tab));
+    if(!force&&!nc&&c&&Date.now()-c.t<30*60e3){showResult(c.r,false);return}
     clear();body.innerHTML='<div class="cv noscroll'+(cfg.landDefault(tab)?' land':'')+(cfg.layout==='h'?' h':'')+'">'+Array(6).fill('<div class="cv-c"><div class="cv-img sk"></div></div>').join('')+'</div>';setFoot('');
     try{
-      const r=await cfg.src(tab,key);if(my!==seq)return;
-      cache[ck]={t:Date.now(),r};
-      if(!r.items.length){clear();body.innerHTML='<div class="nw-msg">Şu an listelenecek bir şey bulunamadı.</div>';setFoot(r.foot||'');return}
+      const r=sq?await cfg.find(sq):await cfg.src(tab,key);if(my!==seq)return;
+      if(!nc)cache[ck]={t:Date.now(),r};
+      if(!r.items.length){clear();body.innerHTML='<div class="nw-msg">'+esc(r.empty||(cfg.empty&&cfg.empty(tab))||'Şu an listelenecek bir şey bulunamadı.')+'</div>';setFoot(r.foot||'');return}
       showResult(r,true);
       if(cfg.status)status(cfg.status,true);
     }catch(e){
@@ -2815,12 +2855,31 @@ function mountCovers(w,root,cfg){
       body.innerHTML='<div class="nw-msg"><div>'+(bad?'API anahtarı kabul edilmedi.':'Liste şu an alınamadı.')+'</div>'+(()=>{const dt=e&&(e.detail||(e.errors||[]).map(x=>x&&(x.detail||x.message)).filter(Boolean).slice(0,3).join(' · '));return !bad&&dt?'<div style="font-size:11px;opacity:.6;margin:4px 0">'+esc(dt)+'</div>':''})()+'<button type="button" data-a="'+(bad?'key':'ref')+'">'+(bad?'Anahtarı değiştir':'Tekrar dene')+'</button>'+((!bad&&cfg.optional(tab)&&!key)?'<button type="button" data-a="key">Anahtar ekle</button>':'')+'</div>';
     }
   }
+  function toggleWish(el){
+    const id=el.dataset.id,it=items.find(x=>x.id===id);if(!it)return;
+    let a=cfg.wish.get();
+    if(wishSet.has(id)){a=a.filter(x=>x.id!==id);wishSet.delete(id)}
+    else{a.unshift({id,n:it.title,i:(it.img||'').replace(PS_IMG,'').split('?')[0]});wishSet.add(id)}
+    cfg.wish.set(a);
+    if(tab==='wish'&&!sq){load(true);return}
+    $$('[data-a=st][data-id="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]',body).forEach(n=>{const on=wishSet.has(id);n.classList.toggle('on',on);n.textContent=on?'★':'☆'});
+  }
+  function closeSearch(quiet){const f=$('#cvs',root);if(!f)return;f.hidden=true;f.querySelector('input').value='';clearTimeout(srTimer);if(sq){sq='';page=0;if(!quiet)load()}}
+  if(cfg.search){const inp=$('#cvs input',root);
+    inp.addEventListener('input',()=>{clearTimeout(srTimer);srTimer=setTimeout(()=>{const v=inp.value.trim();
+      if(v===sq)return;sq=v;page=0;if(sq)load();else load()},220)});
+    inp.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();closeSearch()}});
+    $('#cvs',root).addEventListener('submit',e=>e.preventDefault())}
   root.addEventListener('click',e=>{
+    const st=e.target.closest('[data-a=st]');
+    if(st){e.preventDefault();e.stopPropagation();toggleWish(st);return}
     const t=e.target.closest('[data-t]');
-    if(t){tab=t.dataset.t;LS.set('pano.cv.'+cfg.id,tab);showKey=false;page=0;$('#cvt',root).innerHTML=tabsHtml();load();arm();return}
+    if(t){if(sq)closeSearch(true);tab=t.dataset.t;LS.set('pano.cv.'+cfg.id,tab);showKey=false;page=0;$('#cvt',root).innerHTML=tabsHtml();load();arm();return}
     const a=e.target.closest('[data-a]');if(!a)return;
     const k=a.dataset.a;
-    if(k==='key'){showKey=!showKey;load()}
+    if(k==='sr'){const f=$('#cvs',root);if(f.hidden){f.hidden=false;f.querySelector('input').focus()}else closeSearch()}
+    else if(k==='sx')closeSearch()
+    else if(k==='key'){showKey=!showKey;load()}
     else if(k==='ref'){showKey=false;load(true)}
     else if(k==='close'){showKey=false;load()}
     else if(k==='rm'){LS.set('pano.key.'+cfg.prov(tab),'');showKey=true;load()}
@@ -2832,11 +2891,12 @@ function mountCovers(w,root,cfg){
     const v=f.querySelector('input').value.trim();
     if(v){LS.set('pano.key.'+f.dataset.k,v);showKey=false;Object.keys(cache).forEach(k=>delete cache[k]);load(true)}
   });
-  load();arm();every(w,()=>{if(!showKey)load(true)},3*3600e3);onBus(w,'refresh',()=>{if(!showKey)load()});
+  load();arm();every(w,()=>{if(!showKey&&!sq)load(true)},3*3600e3);onBus(w,'refresh',()=>{if(!showKey)load()});
 }
 const mountGames=(w,r)=>mountCovers(w,r,{id:'games',title:'Oyunlar',tabs:[['soon','Yakında'],['new','Yeni'],['top','Çok satan'],['sale','İndirim']],optional:()=>true,autoPage:()=>true,prov:()=>'rawg',landDefault:t=>t==='soon'&&!!getKey('rawg'),
   src:(t,k)=>t==='new'?gamesSteam('new_releases'):t==='top'?gamesSteam('top_sellers'):t==='sale'?gamesDeals():(k?gamesRAWG(k):Promise.any([gamesSteam(),gamesGOG()]))});
-const mountPS=(w,r)=>mountCovers(w,r,{id:'ps',title:'<span lang="en">PlayStation Store</span>',tabs:null,optional:()=>true,autoPage:()=>true,prov:()=>'ps',landDefault:()=>false,layout:'h',src:()=>gamesPS()});
+const mountPS=(w,r)=>mountCovers(w,r,{id:'ps',title:'<span lang="en">PlayStation Store</span>',tabs:[['deals','İndirim'],['soon','Yakında'],['wish','İstek']],search:true,wish:psWish,nocache:t=>t==='wish',empty:t=>t==='wish'?'Listen boş. Kartlardaki ☆ ile oyun ekle.':'',
+  optional:()=>true,autoPage:t=>t!=='wish',prov:()=>'ps',landDefault:()=>false,layout:'h',src:t=>gamesPS(t),find:q=>psSearch(q)});
 const mountEvents=(w,r)=>mountCovers(w,r,{id:'events',title:'Vizyondaki Filmler',tabs:null,optional:()=>false,autoPage:()=>true,prov:()=>'tmdb',landDefault:()=>false,layout:'h',src:(t,k)=>filmsTMDB(k)});
 
 /* ---------- Haberler ---------- */
