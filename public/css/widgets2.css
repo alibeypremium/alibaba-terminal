@@ -177,11 +177,10 @@
 }
 
 /* Dini Sorular (Diyanet Din İşleri Yüksek Kurulu kararları) */
-.w[data-id=kurul]{--w-bg:radial-gradient(circle at 96% -10%,rgba(255,217,138,.28),transparent 55%),linear-gradient(160deg,rgba(18,110,98,.97),rgba(6,50,48,.98));--acc:#ffd98a}
+.w[data-id=kurul]{--w-bg:var(--pop);--t:var(--fg);--t2:var(--fg2);--line:var(--hairline);--acc:#1f9e8a}
 .kr-w{display:flex;flex-direction:column;height:100%;gap:6px;min-height:0}
-.kr-w .ibtn{background:rgba(127,127,127,.18);color:var(--t)}
 .kr-card{flex:1;min-height:0;display:flex;flex-direction:column;gap:4px;cursor:pointer;border-radius:10px;outline-offset:2px}
-.kr-cq{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;font-size:15px;font-weight:600;line-height:1.35;letter-spacing:-.005em;color:var(--t)}
+.kr-cq{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.36;letter-spacing:-.005em;color:var(--t)}
 .kr-cq>span{display:block;margin:auto 0;max-height:100%}
 .kr-rt{appearance:none;border:1px solid var(--line,rgba(255,255,255,.3));background:transparent;color:var(--t);font:inherit;font-size:12px;padding:2px 10px;border-radius:999px;cursor:pointer;margin-left:6px}
 .kr-ov{position:fixed;inset:0;z-index:1000;background:rgba(5,6,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}

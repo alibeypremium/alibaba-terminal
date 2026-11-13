@@ -49,6 +49,29 @@ export function parseDetail(html, u) {
   return { u, n: no, d, c, s, q, a, k };
 }
 
+/* ---- Günün sorusu: herkes için aynı. Takvim (tarih → karar) önceden yazılır, yalnızca eklenir, geçmişi değişmez. ---- */
+export const istDate = (ms = Date.now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(ms);   // YYYY-MM-DD
+export const addDays = (ymd, n) => { const d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const fnv = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+const keyOf = (u) => u.split('/').pop();
+/** Bugünden `ahead` gün ilerisine kadar eksik günleri doldurur. Her tur, tüm kararlar bir kez çıkana kadar tekrar etmez. */
+export function planGun(prev, items, today, ahead = 120) {
+  const gun = { ...(prev && prev.gun) };
+  let cyc = new Set((prev && prev.cyc) || []);
+  const valid = new Set(items.map((x) => x.u));
+  for (const d of Object.keys(gun)) if (d < addDays(today, -7)) delete gun[d];   // eski günleri at
+  for (let i = 0; i <= ahead; i++) {
+    const d = addDays(today, i);
+    if (gun[d] && valid.has(gun[d])) continue;
+    let pool = items.filter((x) => !cyc.has(x.u));
+    if (!pool.length) { cyc = new Set(); pool = items; }
+    let best = pool[0], bh = Infinity;
+    for (const x of pool) { const h = fnv(d + ':' + keyOf(x.u)); if (h < bh) { bh = h; best = x; } }
+    gun[d] = best.u; cyc.add(best.u);
+  }
+  return { gun, cyc: [...cyc] };
+}
+
 async function get(url, tries = 3) {
   let err;
   for (let i = 0; i < tries; i++) {
@@ -96,8 +119,11 @@ async function main(outDir) {
   if (items.length < list.length * 0.9) throw new Error('kayıt sayısı düşük, eski veri korunuyor');
   items.sort((a, b) => (b.d || '').localeCompare(a.d || '') || (+b.n || 0) - (+a.n || 0));
   const t = Date.now();
+  let prevOzet = null;
+  try { prevOzet = JSON.parse(fs.readFileSync(path.join(outDir, 'kurul-ozet.json'), 'utf8')); } catch {}
+  const { gun, cyc } = planGun(prevOzet, items, istDate(t));
   fs.writeFileSync(prevFile, JSON.stringify({ t, n: items.length, items }));
-  fs.writeFileSync(path.join(outDir, 'kurul-ozet.json'), JSON.stringify({ t, n: items.length, items: items.map(({ u, n, d, c, s, q, k }) => ({ u, n, d, c, s, q, k })) }));
+  fs.writeFileSync(path.join(outDir, 'kurul-ozet.json'), JSON.stringify({ t, n: items.length, gun, cyc, items: items.map(({ u, n, d, c, s, q, k }) => ({ u, n, d, c, s, q, k })) }));
   console.log('yazıldı:', items.length, 'karar');
 }
 

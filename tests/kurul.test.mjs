@@ -43,22 +43,51 @@ test('Dini Sorular: varsayılan boyut Namaz Vakitleri ile aynı (3×1) ve varsay
   await ctx2.close();
 });
 
-test('Dini Sorular: kartta günün sorusu ve kategori görünür; önceki/sonraki soruyu değiştirir', async () => {
-  const ctx = await newContext(browser, { mocks: mocks() });
+const istDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul' }).format(Date.now());
+const cardQ = async (page) => (await page.textContent(W + ' .kr-cq')).replace(/[“”]/g, '').trim();
+
+test('Dini Sorular: kartta yalnızca soru var; önceki/sonraki düğmesi yok; takvimdeki soru gösterilir', async () => {
+  const withGun = { ...ozet, gun: { [istDay()]: ITEMS[2].u } };
+  const ctx = await newContext(browser, { mocks: mocks(withGun) });
   const { page, errors } = await open(ctx);
-  const t0 = await page.textContent(W + ' .kr-cq');
-  assert.ok(ITEMS.some((x) => x.q === t0.trim()));
-  assert.equal(await page.locator(W + ' .kr-cat, ' + W + ' .kr-go').count(), 0, 'kartta yalnızca soru olmalı');
-  await tap(page, W + ' [data-d="1"]');
-  await page.waitForFunction(([s, t]) => document.querySelector(s + ' .kr-cq').textContent.trim() !== t.trim(), [W, t0]);
+  assert.equal(await cardQ(page), ITEMS[2].q);
+  assert.equal(await page.locator(W + ' .kr-cat, ' + W + ' .kr-go, ' + W + ' [data-d]').count(), 0, 'kartta yalnızca soru olmalı');
   assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('Dini Sorular: her tarayıcıda (saat dilimi ne olursa olsun) aynı soru çıkar; takvim yoksa da', async () => {
+  const seen = [];
+  for (const tz of ['Europe/Istanbul', 'America/Los_Angeles', 'Pacific/Auckland']) {
+    for (const o of [ozet, { ...ozet, gun: { [istDay()]: ITEMS[3].u } }]) {
+      const ctx = await newContext(browser, { mocks: mocks(o), timezoneId: tz });
+      const { page } = await open(ctx);
+      seen.push([o.gun ? 'takvimli' : 'takvimsiz', await cardQ(page)]);
+      await ctx.close();
+    }
+  }
+  assert.equal(new Set(seen.filter((x) => x[0] === 'takvimli').map((x) => x[1])).size, 1);
+  assert.equal(new Set(seen.filter((x) => x[0] === 'takvimsiz').map((x) => x[1])).size, 1);
+  assert.ok(seen.every(([, q]) => ITEMS.some((x) => x.q === q)));
+});
+
+test('Dini Sorular: soru yazısı ayet kartıyla aynı yazı tipinde (serif, italik) ve yarı saydam değil pencere rengiyle aynı', async () => {
+  const ctx = await newContext(browser, { mocks: mocks() });
+  const { page } = await open(ctx);
+  const st = await page.evaluate((s) => { const q = getComputedStyle(document.querySelector(s + ' .kr-cq')); const a = document.querySelector('.w[data-id=daily] .dv-q'); return { fs: q.fontStyle, ff: q.fontFamily, aff: a ? getComputedStyle(a).fontFamily : null, bg: getComputedStyle(document.querySelector(s)).backgroundColor }; }, W);
+  assert.equal(st.fs, 'italic');
+  if (st.aff) assert.equal(st.ff, st.aff);
+  await page.dispatchEvent(W + ' .kr-card', 'click');
+  await page.waitForSelector('.kr-ov .kr');
+  const pop = await page.evaluate(() => getComputedStyle(document.querySelector('.kr')).backgroundColor);
+  assert.equal(st.bg, pop, 'widget rengi açılan pencere rengiyle aynı olmalı');
   await ctx.close();
 });
 
 test('Dini Sorular: karta tıklayınca soru-cevap açılır, kaynak ve resmî bağlantı gösterilir; Esc önce listeye sonra kapatır', async () => {
   const ctx = await newContext(browser, { mocks: mocks() });
   const { page } = await open(ctx);
-  const t0 = (await page.textContent(W + ' .kr-cq')).trim();
+  const t0 = await cardQ(page);
   await tap(page, W + ' .kr-card');
   await page.waitForSelector('.kr-ov .kr-q');
   assert.equal((await page.textContent('.kr-ov .kr-q')).trim(), t0);

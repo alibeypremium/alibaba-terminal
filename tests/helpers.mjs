@@ -25,8 +25,8 @@ export const launch = () => chromium.launch({ args: ['--autoplay-policy=no-user-
 export const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
 
 /** Yeni bağlam: yerel sunucu dışındaki her istek kesilir; `mocks` ile belirli adresler sahte yanıtlanır. */
-export async function newContext(browser, { viewport = { width: 1920, height: 909 }, mocks = [] } = {}) {
-  const ctx = await browser.newContext({ viewport });
+export async function newContext(browser, { viewport = { width: 1920, height: 909 }, mocks = [], timezoneId } = {}) {
+  const ctx = await browser.newContext({ viewport, ...(timezoneId ? { timezoneId } : {}) });
   await ctx.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
   await ctx.routeWebSocket(/^wss?:\/\/(?!127\.0\.0\.1)/, (ws) => ws.close());   // canlı fiyat soketleri de dış ağa çıkmasın
   for (const [re, fn] of mocks) await ctx.route(re, fn);

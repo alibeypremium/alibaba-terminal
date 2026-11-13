@@ -95,16 +95,23 @@ function krOpen(w,ozet){
   return{open:u=>paintDetail(u)};
 }
 function mountKurul(w,root){
-  let data=null,bad=false,off=0;
-  root.innerHTML='<div class="kr-w">'+hd('kurul','Dini Sorular','<button class="ibtn" type="button" data-d="-1" aria-label="Önceki soru">'+I.prev+'</button><button class="ibtn" type="button" data-d="1" aria-label="Sonraki soru">'+I.next+'</button>')+
+  let data=null,bad=false;
+  root.innerHTML='<div class="kr-w">'+hd('kurul','Dini Sorular','')+
     '<div class="kr-card" role="button" tabindex="0" aria-label="Soruyu ve cevabı aç"><div class="kr-cq noscroll"></div><div class="kr-cf"></div></div></div>';
   const cq=$('.kr-cq',root),card=$('.kr-card',root);
-  const sorted=()=>[...data.items].sort((a,b)=>krKey(a)<krKey(b)?-1:1);
-  const pick=()=>{const s=sorted(),n=s.length,y=new Date().getFullYear();return s[(((dayOfYear()+y*7+off)%n)+n)%n]};
+  /* Günün sorusu: herkes için aynı. Takvim veride hazırdır (gun: tarih → karar); yoksa tarihten türetilen sabit bir sıra kullanılır. Tarih İstanbul saatine göredir. */
+  const istDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul'}).format(Date.now());
+  const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+  const pick=()=>{
+    const d=istDay(),u=data.gun&&data.gun[d],hit=u&&data.items.find(x=>x.u===u);
+    if(hit)return hit;
+    const s=[...data.items].sort((a,b)=>krKey(a)<krKey(b)?-1:1);
+    return s[hash(d)%s.length];
+  };
   /* Metin kutuya sığana kadar yazı boyutunu küçült. */
   const fit=()=>{
     if(!cq.firstElementChild)return;
-    let lo=11,hi=22,best=11;
+    let lo=11,hi=24,best=11;
     while(hi-lo>.4){const m=(lo+hi)/2;cq.style.fontSize=m+'px';if(cq.scrollHeight<=cq.clientHeight+1){best=m;lo=m}else hi=m}
     cq.style.fontSize=best+'px';
   };
@@ -113,29 +120,29 @@ function mountKurul(w,root){
       cq.innerHTML='<span>'+(bad?'Sorular şu an alınamadı. <button type="button" class="kr-rt">Tekrar dene</button>':'Yükleniyor…')+'</span>';return;
     }
     const x=pick();
-    cq.innerHTML='<span>'+esc(x.q)+'</span>';
+    cq.innerHTML='<span>“'+esc(x.q)+'”</span>';
     card.dataset.u=x.u;fit();
   };
   async function load(){
     try{
       const j=await krLoad('kurul-ozet.json');
-      data=j;bad=false;LS.set('pano.kurul.c',{t:j.t,items:j.items});status('kr',true);
+      data=j;bad=false;LS.set('pano.kurul.c',{t:j.t,gun:j.gun,items:j.items});status('kr',true);
     }catch{
-      if(!data){const c=LS.get('pano.kurul.c',null);if(c&&Array.isArray(c.items)&&c.items.length)data={t:c.t,items:c.items}}
+      if(!data){const c=LS.get('pano.kurul.c',null);if(c&&Array.isArray(c.items)&&c.items.length)data={t:c.t,gun:c.gun,items:c.items}}
       bad=!data;status('kr',false);
     }
     draw();
   }
-  const c0=LS.get('pano.kurul.c',null);if(c0&&Array.isArray(c0.items)&&c0.items.length)data={t:c0.t,items:c0.items};
+  const c0=LS.get('pano.kurul.c',null);if(c0&&Array.isArray(c0.items)&&c0.items.length)data={t:c0.t,gun:c0.gun,items:c0.items};
   draw();load();
   const open=()=>{if(data&&!document.body.classList.contains('editing')){const k=krOpen(w,data);if(k&&card.dataset.u)k.open(card.dataset.u)}};
   root.addEventListener('click',e=>{
     if(e.target.closest('.kr-rt')){load();return}
-    const b=e.target.closest('[data-d]');if(b){off+=+b.dataset.d;draw();return}
     if(e.target.closest('.kr-card'))open();
   });
   card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
   new ResizeObserver(()=>requestAnimationFrame(fit)).observe(root);
-  every(w,()=>{const d=dayOfYear();if(d!==draw._d){draw._d=d;if(!off)draw()}},3600e3);
+  let shownDay=istDay();
+  every(w,()=>{const d=istDay();if(d!==shownDay){shownDay=d;draw()}},600e3);   /* gün (İstanbul) değişince yeni soru */
   every(w,load,6*3600e3);onBus(w,'refresh',load);
 }

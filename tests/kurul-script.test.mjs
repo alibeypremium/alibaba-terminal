@@ -28,3 +28,32 @@ test('Kurul betiği: sitemap yalnızca karar adreslerini ve lastmod değerini al
   <url><loc>https://kurul.diyanet.gov.tr/tr/kurul/karar/c-d/019f-2</loc></url></urlset>`;
   assert.deepEqual(parseSitemap(xml), [{ u: 'a-b/019f-1', m: '2026-08-21' }, { u: 'c-d/019f-2', m: '' }]);
 });
+
+import { planGun, addDays } from '../.github/scripts/kurul.mjs';
+const mkItems = (n) => Array.from({ length: n }, (_, i) => ({ u: `s-${i}/0193c42d-${String(i).padStart(4, '0')}` }));
+
+test('Günün sorusu takvimi: 120 gün ileriye yazılır, bir tur bitmeden tekrar etmez', () => {
+  const items = mkItems(50), t = '2026-11-13';
+  const { gun } = planGun(null, items, t, 40);
+  const ds = Object.keys(gun).sort();
+  assert.equal(ds[0], t); assert.equal(ds.length, 41);
+  assert.equal(new Set(Object.values(gun)).size, 41, 'ilk turda tekrar olmamalı');
+});
+
+test('Günün sorusu takvimi: yeniden çalışınca var olan günler değişmez; yeni karar yalnızca sonraki günlere girer; eski günler 7 gün sonra silinir', () => {
+  const t = '2026-11-13';
+  const a = planGun(null, mkItems(30), t, 20);
+  const b = planGun(a, [...mkItems(30), { u: 'yeni/0193c42d-9999' }], t, 20);
+  assert.deepEqual(b.gun, a.gun);
+  const c = planGun(b, [...mkItems(30), { u: 'yeni/0193c42d-9999' }], addDays(t, 10), 20);
+  for (let i = 10; i <= 20; i++) assert.equal(c.gun[addDays(t, i)], b.gun[addDays(t, i)]);
+  assert.ok(!(t in c.gun) && !(addDays(t, 2) in c.gun), '7 günden eski girdiler atılmalı');
+  assert.ok(Object.keys(c.gun).includes(addDays(t, 30)));
+});
+
+test('Günün sorusu takvimi: tüm kararlar bir kez çıkınca yeni tur başlar', () => {
+  const items = mkItems(5), { gun } = planGun(null, items, '2026-11-13', 11);
+  const first = Object.keys(gun).sort().slice(0, 5).map((d) => gun[d]);
+  assert.equal(new Set(first).size, 5);
+  assert.ok(items.some((x) => x.u === gun[addDays('2026-11-13', 5)]));
+});
