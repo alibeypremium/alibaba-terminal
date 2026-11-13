@@ -14,7 +14,8 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  controls:{title:'Kontrol',def:[1,1],mount:mountControls},
  radio:{title:'Radyo',def:[3,1],mount:mountRadio},
  tv:{title:'TradingView',def:[2,1],mount:mountTV},
- notes:{title:'Notlarım',def:[3,1],hide:true,mount:mountNotes}
+ notes:{title:'Notlarım',def:[3,1],hide:true,mount:mountNotes},
+ kurul:{title:'Dini Sorular',def:[3,1],hide:true,mount:mountKurul}
 };
 const PRESETS={XS:[2,1],S:[2,2],M:[3,2],L:[4,3],XL:[6,4]};
 const grid=$('#grid');
@@ -38,7 +39,7 @@ let cols=12,gap=14,cellW=150,cellH=150;
 const TAB_MIN={ps:[3,3],radio:[3,2],tv:[3,2],weather:[3,2],games:[3,2]};
 function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(id==='controls'?1:2,w,m))}
 /* Mobilde (4 sütun) hücreler küçük kalır; grafik, hava, namaz saatleri ve notlar için asgari yükseklik */
-const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,fx:3,notes:3,controls:2};
+const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,kurul:3,fx:3,notes:3,controls:2};
 function effH(h,id){return cols===4?Math.max(h+1,MOB_MIN[id]||0):cols===6&&TAB_MIN[id]?Math.max(h,TAB_MIN[id][1]):h}
 function applySize(el,l){el.style.gridColumn='span '+effW(l.w,l.id);el.style.gridRow='span '+effH(l.h,l.id);paintSizes(el,l)}
 function paintSizes(el,l){$$('.w-sizes button',el).forEach(b=>{const p=PRESETS[b.dataset.s];b.classList.toggle('on',p[0]===l.w&&p[1]===l.h)})}

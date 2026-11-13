@@ -175,3 +175,47 @@
   .cv-date{left:50%;top:auto;bottom:4px;translate:-50% 0;font-size:9px;padding:1px 6px}
   .kp p,.kp a{display:none}
 }
+
+/* Dini Sorular (Diyanet Din İşleri Yüksek Kurulu kararları) */
+.w[data-id=kurul]{--w-bg:radial-gradient(circle at 96% -10%,rgba(255,217,138,.28),transparent 55%),linear-gradient(160deg,rgba(18,110,98,.97),rgba(6,50,48,.98));--acc:#ffd98a}
+.kr-w{display:flex;flex-direction:column;height:100%;gap:6px;min-height:0}
+.kr-w .ibtn{background:rgba(127,127,127,.18);color:var(--t)}
+.kr-card{flex:1;min-height:0;display:flex;flex-direction:column;gap:4px;cursor:pointer;border-radius:10px;outline-offset:2px}
+.kr-cq{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;font-family:var(--serif);font-size:14px;line-height:1.3;color:var(--t)}
+.kr-cq>span{display:block;margin:auto 0;max-height:100%}
+.kr-cf{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.kr-cf .kr-cat{color:var(--acc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kr-cf .kr-go{color:var(--t2);flex:none}
+.kr-rt{appearance:none;border:1px solid var(--line,rgba(255,255,255,.3));background:transparent;color:var(--t);font:inherit;padding:3px 10px;border-radius:999px;cursor:pointer;text-transform:none;letter-spacing:0}
+.kr-ov{position:fixed;inset:0;z-index:1000;background:rgba(5,6,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
+.kr{width:min(760px,100%);height:min(88vh,820px);display:flex;flex-direction:column;background:var(--pop);color:var(--fg);border:1px solid var(--hairline);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.45);overflow:hidden}
+.kr-h{display:flex;align-items:center;gap:10px;padding:14px 16px 6px;flex:none}
+.kr-t{flex:1;font-size:16px;font-weight:700;min-width:0}
+.kr-x{appearance:none;border:0;background:var(--glass);color:var(--fg);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px}
+.kr-tools{display:flex;flex-direction:column;gap:8px;padding:6px 16px 10px;flex:none}
+.kr-s{width:100%;box-sizing:border-box;border:1px solid var(--hairline);background:var(--glass);color:var(--fg);font:inherit;font-size:14px;padding:9px 14px;border-radius:999px;outline:none}
+.kr-s:focus{border-color:#1f9e8a}
+.kr-cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.kr-cats button{appearance:none;flex:none;border:1px solid var(--hairline);background:transparent;color:var(--fg2);font:inherit;font-size:12px;font-weight:600;padding:4px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.kr-cats button.on{background:#1f9e8a;border-color:transparent;color:#fff}
+.kr-b{flex:1;min-height:0;overflow:auto;padding:2px 16px 12px;outline:none}
+.kr-i{appearance:none;display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--hairline);background:transparent;color:var(--fg);font:inherit;padding:11px 4px;cursor:pointer}
+.kr-i:hover{background:rgba(127,127,127,.12)}
+.kr-i b{display:block;font-size:14px;font-weight:600;line-height:1.4}
+.kr-i span{display:block;margin-top:3px;font-size:11.5px;color:var(--fg2)}
+.kr-more{appearance:none;display:block;margin:12px auto;border:1px solid var(--hairline);background:var(--glass);color:var(--fg);font:inherit;font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer}
+.kr-cnt,.kr-empty{padding:10px 4px;font-size:12px;color:var(--fg2);text-align:center}
+.kr-back{appearance:none;border:0;background:transparent;color:#1f9e8a;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:6px 0}
+.kr-meta{font-size:12px;color:var(--fg2);margin-top:4px}
+.kr-cat{font-size:12px;font-weight:700;color:#1f9e8a;margin-top:2px}
+.kr-sh{margin:16px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2)}
+.kr-q{margin:0;font-family:var(--serif);font-size:19px;line-height:1.4;font-weight:600}
+.kr-a p{margin:0 0 10px;font-size:15px;line-height:1.65}
+.kr-wait{color:var(--fg2)}
+.kr-k{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.kr-k button{appearance:none;border:1px solid var(--hairline);background:var(--glass);color:var(--fg2);font:inherit;font-size:12px;padding:3px 10px;border-radius:999px;cursor:pointer}
+.kr-src{display:inline-block;margin-top:16px;font-size:13px;font-weight:600;color:#1f9e8a;text-decoration:none}
+.kr-src:hover{text-decoration:underline}
+.kr-f{flex:none;padding:9px 16px 12px;border-top:1px solid var(--hairline);font-size:11.5px;color:var(--fg2)}
+.kr-f a{color:#1f9e8a;text-decoration:none;font-weight:600}
+@media (max-width:560px){.kr-ov{padding:0}.kr{width:100%;height:100%;border-radius:0}}
