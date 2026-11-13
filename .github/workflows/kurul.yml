@@ -1,0 +1,42 @@
+name: kurul
+on:
+  schedule:
+    - cron: '41 3 * * *'      # günde bir kez (UTC 03:41)
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Tüm kararları yeniden indir (1)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: kurul
+  cancel-in-progress: false
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save --no-package-lock cheerio@1.0.0
+      - name: önceki veriyi al (başarısızlıkta eskisi kalsın; yalnızca yeni/güncellenen kararlar indirilir)
+        run: |
+          git clone -q --depth 1 -b veri-kurul "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" out 2>/dev/null && rm -rf out/.git || mkdir -p out
+      - name: kararları çek
+        env:
+          FULL: ${{ github.event.inputs.full }}
+        run: node .github/scripts/kurul.mjs out
+      - name: veri-kurul dalına yaz (site yeniden build olmaz)
+        run: |
+          [ -s out/kurul.json ] || { echo "veri yok, dal güncellenmedi"; exit 0; }
+          cd out
+          git init -q -b veri-kurul
+          git config user.name "kurul-bot"
+          git config user.email "kurul-bot@users.noreply.github.com"
+          git add kurul.json kurul-ozet.json
+          git commit -q -m "kurul $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" veri-kurul
