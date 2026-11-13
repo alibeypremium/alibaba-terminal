@@ -98,23 +98,22 @@ function mountKurul(w,root){
   let data=null,bad=false,off=0;
   root.innerHTML='<div class="kr-w">'+hd('kurul','Dini Sorular','<button class="ibtn" type="button" data-d="-1" aria-label="Önceki soru">'+I.prev+'</button><button class="ibtn" type="button" data-d="1" aria-label="Sonraki soru">'+I.next+'</button>')+
     '<div class="kr-card" role="button" tabindex="0" aria-label="Soruyu ve cevabı aç"><div class="kr-cq noscroll"></div><div class="kr-cf"></div></div></div>';
-  const cq=$('.kr-cq',root),cf=$('.kr-cf',root),card=$('.kr-card',root);
+  const cq=$('.kr-cq',root),card=$('.kr-card',root);
   const sorted=()=>[...data.items].sort((a,b)=>krKey(a)<krKey(b)?-1:1);
   const pick=()=>{const s=sorted(),n=s.length,y=new Date().getFullYear();return s[(((dayOfYear()+y*7+off)%n)+n)%n]};
   /* Metin kutuya sığana kadar yazı boyutunu küçült. */
   const fit=()=>{
     if(!cq.firstElementChild)return;
-    let lo=10,hi=18,best=10;
+    let lo=11,hi=22,best=11;
     while(hi-lo>.4){const m=(lo+hi)/2;cq.style.fontSize=m+'px';if(cq.scrollHeight<=cq.clientHeight+1){best=m;lo=m}else hi=m}
     cq.style.fontSize=best+'px';
   };
   const draw=()=>{
     if(!data){
-      cq.innerHTML='<span>'+(bad?'Sorular şu an alınamadı.':'Yükleniyor…')+'</span>';cf.innerHTML=bad?'<button type="button" class="kr-rt">Tekrar dene</button>':'';return;
+      cq.innerHTML='<span>'+(bad?'Sorular şu an alınamadı. <button type="button" class="kr-rt">Tekrar dene</button>':'Yükleniyor…')+'</span>';return;
     }
     const x=pick();
     cq.innerHTML='<span>'+esc(x.q)+'</span>';
-    cf.innerHTML='<span class="kr-cat">'+esc(krCase(x.c))+'</span><span class="kr-go">Cevabı oku ›</span>';
     card.dataset.u=x.u;fit();
   };
   async function load(){

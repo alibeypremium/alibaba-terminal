@@ -181,12 +181,9 @@
 .kr-w{display:flex;flex-direction:column;height:100%;gap:6px;min-height:0}
 .kr-w .ibtn{background:rgba(127,127,127,.18);color:var(--t)}
 .kr-card{flex:1;min-height:0;display:flex;flex-direction:column;gap:4px;cursor:pointer;border-radius:10px;outline-offset:2px}
-.kr-cq{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;font-family:var(--serif);font-size:14px;line-height:1.3;color:var(--t)}
+.kr-cq{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;font-size:15px;font-weight:600;line-height:1.35;letter-spacing:-.005em;color:var(--t)}
 .kr-cq>span{display:block;margin:auto 0;max-height:100%}
-.kr-cf{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
-.kr-cf .kr-cat{color:var(--acc);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kr-cf .kr-go{color:var(--t2);flex:none}
-.kr-rt{appearance:none;border:1px solid var(--line,rgba(255,255,255,.3));background:transparent;color:var(--t);font:inherit;padding:3px 10px;border-radius:999px;cursor:pointer;text-transform:none;letter-spacing:0}
+.kr-rt{appearance:none;border:1px solid var(--line,rgba(255,255,255,.3));background:transparent;color:var(--t);font:inherit;font-size:12px;padding:2px 10px;border-radius:999px;cursor:pointer;margin-left:6px}
 .kr-ov{position:fixed;inset:0;z-index:1000;background:rgba(5,6,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
 .kr{width:min(760px,100%);height:min(88vh,820px);display:flex;flex-direction:column;background:var(--pop);color:var(--fg);border:1px solid var(--hairline);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.45);overflow:hidden}
 .kr-h{display:flex;align-items:center;gap:10px;padding:14px 16px 6px;flex:none}
@@ -209,7 +206,7 @@
 .kr-meta{font-size:12px;color:var(--fg2);margin-top:4px}
 .kr-cat{font-size:12px;font-weight:700;color:#1f9e8a;margin-top:2px}
 .kr-sh{margin:16px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2)}
-.kr-q{margin:0;font-family:var(--serif);font-size:19px;line-height:1.4;font-weight:600}
+.kr-q{margin:0;font-size:18px;line-height:1.4;font-weight:700}
 .kr-a p{margin:0 0 10px;font-size:15px;line-height:1.65}
 .kr-wait{color:var(--fg2)}
 .kr-k{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}

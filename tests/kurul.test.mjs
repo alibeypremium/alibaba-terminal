@@ -48,7 +48,7 @@ test('Dini Sorular: kartta günün sorusu ve kategori görünür; önceki/sonrak
   const { page, errors } = await open(ctx);
   const t0 = await page.textContent(W + ' .kr-cq');
   assert.ok(ITEMS.some((x) => x.q === t0.trim()));
-  assert.match(await page.textContent(W + ' .kr-cat'), /^(Namaz|Zekat ve Sadaka)$/);
+  assert.equal(await page.locator(W + ' .kr-cat, ' + W + ' .kr-go').count(), 0, 'kartta yalnızca soru olmalı');
   await tap(page, W + ' [data-d="1"]');
   await page.waitForFunction(([s, t]) => document.querySelector(s + ' .kr-cq').textContent.trim() !== t.trim(), [W, t0]);
   assert.deepEqual(errors, []);
