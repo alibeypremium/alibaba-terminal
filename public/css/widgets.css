@@ -167,7 +167,8 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 /* Günün ayeti / hadisi / esması */
 .w[data-id=daily][data-tab=ayet]{--on:#f4ecd6;--w-bg:linear-gradient(160deg,rgba(244,236,214,.95),rgba(228,214,176,.94));--t:#1b3a30;--t2:rgba(27,58,48,.66);--acc:#a9822a;--line:rgba(27,58,48,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 0 0 1px rgba(255,255,255,.3),0 22px 44px -22px rgba(0,0,0,.6)}
 .w[data-id=daily][data-tab=ayet]::before{background:radial-gradient(circle at 100% 0%,rgba(169,130,42,.22),transparent 55%)}
-.w[data-id=daily][data-tab=hadis]{--on:#521630;--w-bg:linear-gradient(160deg,rgba(120,32,52,.95),rgba(52,16,32,.97));--t:#fbeee2;--t2:rgba(251,238,226,.66);--acc:#ffb988}
+.w[data-id=daily][data-tab=dua]{--on:#2c1a63;--w-bg:linear-gradient(160deg,rgba(86,54,158,.96),rgba(30,18,72,.98));--t:#f4edff;--t2:rgba(244,237,255,.68);--acc:#d8bcff}
+.dv-why{display:block;font-family:var(--font);font-style:normal;font-size:.6em;line-height:1.4;font-weight:500;letter-spacing:.01em;color:var(--acc);margin-bottom:.7em;opacity:.95}
 .w[data-id=daily][data-tab=esma]{--on:#0b1a40;--w-bg:radial-gradient(circle at 80% 0%,rgba(224,184,96,.28),transparent 50%),linear-gradient(160deg,rgba(12,30,72,.96),rgba(6,12,38,.98));--acc:#f0c768}
 .dv{display:flex;flex-direction:column;height:100%;gap:8px;min-height:0}
 .dv-q{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;font-family:var(--serif);font-size:clamp(13.5px,4.4cqw,25px);line-height:1.36;letter-spacing:-.005em;font-style:italic}

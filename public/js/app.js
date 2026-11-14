@@ -6,7 +6,7 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  tech:{title:'Teknoloji · Oyun · Otomobil · Ekonomi',def:[3,3],mount:mountTechNews},
  prayer:{title:'Namaz Vakitleri',def:[3,1],mount:mountPrayer},
  fx:{title:'Döviz Kurları',def:[3,1],mount:mountFX},
- daily:{title:'Ayet · Hadis · Esma',def:[3,1],mount:mountDaily},
+ daily:{title:'Ayet · Dua · Esma',def:[3,1],mount:mountDaily},
  events:{title:'FİLMLER',def:[3,2],mount:mountEvents},
  games:{title:'Oyunlar',def:[3,2],mount:mountGames},
  ps:{title:'PLAYSTATION',def:[3,2],mount:mountPS},

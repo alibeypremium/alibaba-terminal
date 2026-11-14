@@ -9,6 +9,7 @@ const ICON={
  fx:{bg:'linear-gradient(160deg,#7be08a,#0f9d58)',svg:sv('<path d="M11 6v14c0 2 1.2 3 3 3h3M11 12l11-3M11 17l11-3" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>')},
  prayer:{bg:'linear-gradient(160deg,#6a4fd8,#2c1d78)',svg:sv('<path d="M20 5a10 10 0 1 0 6 17 8.5 8.5 0 0 1-6-17z" fill="#ffd57a"/><path d="m24 6 .9 2.1 2.1.9-2.1.9L24 12l-.9-2.1L21 9l2.1-.9z" fill="#fff"/>')},
  ayet:{bg:'linear-gradient(160deg,#2f8f6f,#14573f)',svg:sv('<path d="M16 9c-2-2-6-2.5-10-1.5v16c4-1 8-.5 10 1.5 2-2 6-2.5 10-1.5v-16C22 6.5 18 7 16 9zM16 9v16" stroke="#f3e3a8" stroke-width="2.2" stroke-linejoin="round"/>')},
+ dua:{bg:'linear-gradient(160deg,#8a63d2,#3d2488)',svg:sv('<path d="M16 6l2.2 5.6L24 12.6l-4.4 3.9 1.4 5.9L16 19.2 11 22.4l1.4-5.9L8 12.6l5.8-1z" fill="#f1e6ff"/>')},
  hadis:{bg:'linear-gradient(160deg,#d0505f,#7a1f34)',svg:sv('<path d="M9 5h11l4 4v18H9z" fill="#ffe9d6"/><path d="M13 14h8M13 18h8M13 22h5" stroke="#9c2b43" stroke-width="2" stroke-linecap="round"/>')},
  esma:{bg:'linear-gradient(160deg,#274a9e,#0b1a4a)',svg:sv('<path d="M16 4l3 6.5 7-1-4.5 5.5L26 22l-7-1.2L16 28l-3-7.2L6 22l4.5-7-4.5-5.5 7 1z" fill="#f0c768"/>')},
  gnews:{bg:'#fff',svg:sv('<rect x="5" y="7" width="22" height="18" rx="3" fill="#e8f0fe"/><rect x="8" y="10" width="9" height="3" rx="1" fill="#1a73e8"/><rect x="8" y="15" width="16" height="2" rx="1" fill="#ea4335"/><rect x="8" y="19" width="16" height="2" rx="1" fill="#fbbc04"/><rect x="8" y="23" width="10" height="1.6" rx=".8" fill="#34a853"/>')},
