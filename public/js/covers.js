@@ -73,6 +73,10 @@ const psTL=n=>Number(n).toLocaleString('tr-TR')+' TL';
 const psPct=r=>r.base>0&&r.now<r.base?Math.round((1-r.now/r.base)*100):0;
 const psImg=im=>im?PS_IMG+im+'?w=360':'';
 const psAgo=t=>{const m=Math.max(0,Math.round((Date.now()-Date.parse(t))/6e4));return m<90?m+' dk önce':Math.round(m/60)+' sa önce'};
+/* İndirim bitişleri tek satırda: aynı gün ise "31 Ara", değilse "17 Kas – 31 Ara" (gelecekteki en yakın ve en uzak bitiş; İstanbul saati). */
+const psEndText=rows=>{const now=Date.now(),es=rows.map(r=>r&&+r.e).filter(e=>e>now);if(!es.length)return'';
+  const f=e=>new Date(e).toLocaleDateString('tr-TR',{day:'numeric',month:'short',timeZone:'Europe/Istanbul'}),a=f(Math.min(...es)),b=f(Math.max(...es));
+  return'İndirim bitişi: '+(a===b?a:a+' – '+b)};
 /* Katalog satırı → kart. r: {id,n,now,base,im,pl,pre} */
 const psAged=since=>!!since&&Date.now()-Date.parse(since)>=7*864e5;   /* geçmiş en az 7 gündür tutuluyorsa "en düşük" rozeti güvenilir sayılır */
 const psItem=(r,aged)=>{const pc=psPct(r);return{low:!!aged&&pc>0&&(r.lo===1||(r.lo>1&&r.now<=r.lo)),id:r.id,title:r.n,img:psImg(r.im),url:'https://store.playstation.com/tr-tr/product/'+encodeURIComponent(r.id),
@@ -93,7 +97,7 @@ async function gamesPS(tab){
   const rows=(tab==='soon'?j.soon:j.deals)||[];
   const aged=psAged(j.since),items=rows.filter(r=>r&&r.n&&r.id).map(r=>psItem(r,aged));
   if(!items.length)throw new Error('ps-bos');
-  return{items,land:false,foot:'PlayStation Store TR · '+(tab==='soon'?'yakında çıkacaklar · çıkış tarihine göre':'çok satan indirimler')+' · güncelleme '+psAgo(j.t)};
+  return{items,land:false,foot:'PS Store TR · '+(tab==='soon'?'yakında çıkacaklar':(psEndText(rows)||'çok satan indirimler'))+' · '+psAgo(j.t)};
 }
 async function psSearch(q){
   const cat=await psCatalog(),k=psTr(q),ws=k.split(' ').filter(Boolean);

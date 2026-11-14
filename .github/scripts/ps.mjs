@@ -40,6 +40,15 @@ export function toRow(o) {
   const n = Number.isFinite(now) ? now : b;
   return { id, n: String(o.name).replace(/\s+/g, ' ').trim().slice(0, 100), now: Math.round(n), base: Math.round(b), im: imgPath(o), pl: plat(o), pre: !!(Array.isArray(o.skus) && o.skus.some((s) => s && s.type === 'PREORDER')) };
 }
+/** Ürün sayfasındaki indirim bitiş zamanı: fiyat nesnesinde "endTime":"<ms>". Birden çok varsa (ör. PS Plus fiyatı) en yakın gelecek olanı alır; yoksa 0. */
+export function parseEnd(html, now = Date.now()) {
+  let best = 0;
+  for (const m of String(html).matchAll(/"endTime":"(\d{12,14})"/g)) {
+    const v = +m[1];
+    if (v > now && (!best || v < best)) best = v;
+  }
+  return best;
+}
 export const pct = (r) => (r.base > 0 && r.now < r.base ? Math.round((1 - r.now / r.base) * 100) : 0);
 
 async function grid(cat, offset, size, sortName, asc, filterBy) {
@@ -94,6 +103,16 @@ async function main() {
     }
   }
   console.log('indirim:', deals.length);
+
+  // İndirim bitiş zamanı: kategori verisinde yok; ürün sayfasındaki fiyat nesnesinde "endTime" var.
+  await pool(deals, 4, async (r) => {
+    try {
+      const x = await fetch(BASE + '/tr-tr/product/' + encodeURIComponent(r.id), { headers: { 'user-agent': UA, 'accept-language': 'tr-TR' }, signal: AbortSignal.timeout(20000) });
+      const e = parseEnd(await x.text());
+      if (e) r.e = e;
+    } catch (e) { console.log('bitiş hata', r.id, e.message); }
+  });
+  console.log('bitiş tarihli indirim:', deals.filter((r) => r.e).length);
 
   // 2) Yakında / ön sipariş (çıkış tarihine göre)
   const soon = [], seenS = new Set();

@@ -85,3 +85,21 @@ test('Arama: Türkçe karakter duyarsız, sonuç sayısı ve kapatma', async () 
   assert.ok(await visible(W) >= 3);
   await ctx.close();
 });
+
+test('İndirim sekmesi: altyazıda kısa kaynak adı, indirim bitiş aralığı ve güncelleme zamanı; kartlarda bitiş yazısı yok', async () => {
+  const day = 864e5, a = Date.now() + 3 * day, b = Date.now() + 17 * day;
+  const ctx = await newContext(browser, { mocks: [[/veri-ps\/ps\.json/, (r) => r.fulfill(json({
+    t: new Date().toISOString(), since: since(30),
+    deals: [...Array(6)].map((_, i) => ({ ...psRow(i), ...(i === 0 ? { e: a } : i === 1 ? { e: b } : i === 2 ? { e: Date.now() - day } : {}) })),
+    soon: [],
+  }))]] });
+  const { page } = await openPage(ctx, srv.url, { layout: psLayout, ls: { 'pano.ps.size': 2 } });
+  const W = page.locator('.w[data-id=ps]');
+  await W.locator('.cv-c').first().waitFor();
+  const f = (e) => new Date(e).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', timeZone: 'Europe/Istanbul' });
+  const foot = (await W.locator('#cvf').innerText()).trim();
+  assert.equal(foot, `PS Store TR · İndirim bitişi: ${f(a)} – ${f(b)} · 0 dk önce`);
+  assert.ok(foot.length < 70, 'altyazı kısa olmalı');
+  assert.doesNotMatch(await W.locator('.cv-c').first().innerText(), /bitiş/i);
+  await ctx.close();
+});

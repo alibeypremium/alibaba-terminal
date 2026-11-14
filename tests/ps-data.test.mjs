@@ -27,3 +27,13 @@ test('toRow: indirimsiz, ön siparişli ve eksik verili ürünler', () => {
   assert.equal(toRow({ name: 'x' }), null);        // id yok
   assert.equal(toRow({ id: '1', name: 'Ücretsiz', price: {} }).base, 0);
 });
+
+import { parseEnd } from '../.github/scripts/ps.mjs';
+test('PS betiği: indirim bitiş zamanı fiyat nesnesinden okunur; geçmiş/boş değerler yok sayılır, en yakın gelecek alınır', () => {
+  const now = Date.UTC(2026, 10, 14);
+  const h = (...v) => v.map((x) => `{"price":{"basePrice":"1 TL","endTime":${x === null ? 'null' : `"${x}"`}}}`).join(',');
+  assert.equal(parseEnd(h(null, '1796083140000'), now), 1796083140000);
+  assert.equal(parseEnd(h('1796083140000', '1795000000000'), now), 1795000000000, 'en yakın gelecek bitiş');
+  assert.equal(parseEnd(h('1700000000000'), now), 0, 'geçmiş tarih yok sayılır');
+  assert.equal(parseEnd('<html>fiyat yok</html>', now), 0);
+});
