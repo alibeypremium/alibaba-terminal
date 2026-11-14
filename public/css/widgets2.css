@@ -263,13 +263,50 @@
   .wx-mini{display:block;grid-area:3/2;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 }
 @container (max-width:230px){
-  .rd{gap:0}
-  .rd-now{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:7px 9px;align-items:center;align-content:center;padding:8px 9px;flex:1;min-height:0}
-  .rd-disc{display:grid!important;width:38px;height:38px}
-  .rd-disc .rd-lg{width:23px;height:23px;font-size:6.5px}
-  .rd-nm{font-size:13px}
+  /* 1×1 radyo: üstte plak + kanal adı + (ekolayzır, CANLI), ortada ileri-geri-oynat, altta ses çubuğu */
+  .rd{gap:6px;justify-content:center}
+  .rd-now{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:6px 8px;align-items:center;padding:0;background:none;box-shadow:none;flex:none}
+  .rd-disc{display:grid!important;width:34px;height:34px}
+  .rd-disc .rd-lg{width:21px;height:21px;font-size:6px}
+  .rd-inf{gap:3px}
+  .rd-nm{font-size:13px;line-height:1.1}
+  .rd-sl{gap:5px}
+  .rd-eq{display:flex!important;width:17px;height:12px}
+  .rd:not(.live) .rd-eq i{height:22%;animation-play-state:paused;opacity:.55}
+  .rd-st{font-size:10.5px}
+  .rd-badge{padding:0 6px 0 5px;font-size:9px}
   .rd-tr{grid-column:1/-1;justify-content:center;gap:12px}
-  .rd-sk{display:grid!important;width:30px;height:30px}
-  .rd-pl{width:36px;height:36px}
-  .rd-ctl{display:none}
+  .rd-sk{display:grid!important;width:28px;height:28px}
+  .rd-pl{width:34px;height:34px}
+  .rd-ctl{flex:none;display:block}
+  .rd-list{display:none}
+  .rd-vol{gap:6px;height:16px}
+  .rd-vol svg{width:14px;height:14px}
+}
+
+/* ====== 1×1, çok dar hücre (≈ 1280–1600 px ekran: hücre 90–125 px) ====== */
+@container (max-width:125px){
+  .w[data-id=weather] .w-in,.w[data-id=radio] .w-in{padding:8px 8px}
+  .wx{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;row-gap:1px}
+  .wx-place{grid-area:1/1;font-size:12px}
+  .wx-main{grid-area:2/1;gap:3px}
+  .wx-icon svg{width:30px}
+  .wx-temp{font-size:34px}
+  .wx-cond{grid-area:3/1;font-size:10.5px}
+  .wx-mini{grid-area:4/1;font-size:10.5px}
+  .rd{gap:5px}
+  .rd-now{gap:4px 7px}
+  .rd-disc{width:30px;height:30px}
+  .rd-nm{font-size:12.5px}
+  .rd-tr{gap:5px}
+  .rd-sk{width:24px;height:24px}
+  .rd-sk svg{width:12px;height:12px}
+  .rd-pl{width:30px;height:30px}
+  .rd-pl svg{width:16px;height:16px}
+  .rd-vol{gap:5px}
+}
+@container (max-width:104px){
+  .rd-disc{display:none!important}
+  .rd-now{grid-template-columns:minmax(0,1fr)}
+  .rd-inf{grid-column:1}
 }

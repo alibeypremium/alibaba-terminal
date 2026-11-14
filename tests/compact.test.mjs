@@ -59,8 +59,14 @@ test('Radyo 1×1: kanal, durum ve denetimler kutunun içinde; liste/ses çubuğu
   await page.waitForSelector(W + ' .rd-pl');
   const b = await page.$eval(W, (e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
   assert.ok(b[0] < 200 && b[1] < 200, 'kutu 1×1: ' + b);
-  assert.deepEqual(await inside(page, W, ['.rd-disc', '.rd-nm', '.rd-st', '.rd-pv', '.rd-pl', '.rd-nx']), []);
-  for (const s of ['.rd-ctl']) assert.equal(await page.$eval(W + ' ' + s, (e) => getComputedStyle(e).display), 'none');
+  assert.deepEqual(await inside(page, W, ['.rd-nm', '.rd-st', '.rd-eq', '.rd-pv', '.rd-pl', '.rd-nx', '.rd-vol', '.rd-vol input']), [], 'plak, ad, ekolayzır, düğmeler ve ses çubuğu görünür');
+  assert.equal(await page.$eval(W + ' .rd-list', (e) => getComputedStyle(e).display), 'none', 'kanal listesi gizli');
+  // CANLI rozeti ve ekolayzır çalarken de sığar (durum satırına rozet yerleştirilip ölçülür)
+  await page.evaluate((W) => { const r = document.querySelector(W + ' .rd'); r.classList.add('live'); document.querySelector(W + ' .rd-st').innerHTML = '<span class="rd-badge"><i></i>CANLI</span><span class="rd-br">64 kbps</span>'; }, W);
+  assert.deepEqual(await inside(page, W, ['.rd-badge', '.rd-eq']), []);
+  assert.equal(await page.$eval(W + ' .rd-badge', (e) => e.textContent), 'CANLI');
+  assert.equal(await page.$eval(W + ' .rd-eq i', (e) => getComputedStyle(e).animationName), 'rdeq', 'çalarken ekolayzır oynar');
+  await page.evaluate((W) => document.querySelector(W + ' .rd').classList.remove('live'), W);
   assert.equal((await page.textContent(W + ' .rd-nm')).trim(), 'Bir kanal seç');
   await tap(page, W + ' .rd-nx');
   assert.equal((await page.textContent(W + ' .rd-nm')).trim(), 'Habertürk');
@@ -68,7 +74,11 @@ test('Radyo 1×1: kanal, durum ve denetimler kutunun içinde; liste/ses çubuğu
   assert.equal((await page.textContent(W + ' .rd-nm')).trim(), 'NTV');
   await tap(page, W + ' .rd-pv');
   assert.equal((await page.textContent(W + ' .rd-nm')).trim(), 'Habertürk');
-  assert.deepEqual(await inside(page, W, ['.rd-disc', '.rd-nm', '.rd-st', '.rd-pv', '.rd-pl', '.rd-nx']), [], 'kanal değişince de sığar');
+  assert.deepEqual(await inside(page, W, ['.rd-nm', '.rd-st', '.rd-pv', '.rd-pl', '.rd-nx']), [], 'kanal değişince de sığar');
+  // ses çubuğu
+  await page.$eval(W + ' .rd-vol input', (e) => { e.value = 30; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pano.radio.vol'))), 0.3);
+  await page.$eval(W + ' .rd-vol input', (e) => { e.value = 70; e.dispatchEvent(new Event('input', { bubbles: true })); });
   // ses: fare tekerleği (aşağı = kıs)
   const r = await page.$eval(W, (e) => { const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
   await page.mouse.move(r[0], r[1]);
@@ -101,3 +111,65 @@ test('Eski düzende Radyo (3×1) ve Hava (2×1) tek seferlik 1×1 olur; sonra el
   assert.deepEqual(await l(), ['radio:3x1', 'weather:1x1']);
   await ctx.close();
 });
+
+test('Üst çubuk Radyo çipi: hava çipinin soluna; çal/durdur, kanal değiştirme, ses; widget ile eşzamanlı', async () => {
+  const ctx = await newContext(browser, { mocks: [[/api\.open-meteo\.com\/v1\/forecast/, (r) => r.fulfill(json(forecast))]] });
+  await ctx.addInitScript(() => { HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('playing')), 20); return Promise.resolve(); }; });   // ağsız sahte oynatma
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: LAYOUT });
+  await page.waitForSelector('#sbRd');
+  const pos = await page.evaluate(() => { const a = document.querySelector('#sbRd'), w = document.querySelector('#sbWx').getBoundingClientRect(), r = a.getBoundingClientRect(); return { next: a.nextElementSibling.id, right: r.right, wxLeft: w.left, dy: Math.abs(r.top + r.height / 2 - (w.top + w.height / 2)) }; });
+  assert.equal(pos.next, 'sbWxBox');
+  assert.ok(pos.right <= pos.wxLeft + 0.5 && pos.wxLeft - pos.right < 14, 'hava çipinin hemen solunda');
+  assert.ok(pos.dy < 3, 'aynı hizada');
+  assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Radyo');
+  assert.equal(await page.getAttribute('#sbRd', 'data-state'), 'idle');
+  // sonraki kanal: çip ve widget aynı kanalı gösterir
+  await tap(page, '#sbRd .sb-rdn');
+  assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Habertürk');
+  assert.equal((await page.textContent('.w[data-id=radio] .rd-nm')).trim(), 'Habertürk');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play', null, { timeout: 5000 });
+  assert.match(await page.textContent('.w[data-id=radio] .rd-st'), /CANLI/);
+  assert.equal(await page.$eval('#sbRd .rd-eq i', (e) => getComputedStyle(e).animationName), 'rdeq', 'çip ekolayzırı oynar');
+  // çal/durdur
+  await tap(page, '#sbRd .sb-rdb');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'idle');
+  assert.match(await page.textContent('.w[data-id=radio] .rd-st'), /Durdu/);
+  await tap(page, '#sbRd .sb-rdb');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
+  // ses: tekerlek; widget'taki çubuk da güncellenir
+  const r = await page.$eval('#sbRd', (e) => { const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+  await page.mouse.move(r[0], r[1]);
+  await page.mouse.wheel(0, 100);
+  await page.waitForFunction(() => /Ses %65/.test(document.querySelector('#sbRd .sb-rdn').textContent));
+  assert.equal(await page.$eval('.w[data-id=radio] .rd-vol input', (e) => e.value), '65');
+  await page.waitForFunction(() => document.querySelector('#sbRd .sb-rdn').textContent === 'Habertürk', null, { timeout: 4000 });
+  await ctx.close();
+});
+
+test('Radyo widget kapalıyken de üst çubuk çipi çalışır (motor widget\'tan bağımsız)', async () => {
+  const ctx = await newContext(browser);
+  await ctx.addInitScript(() => { HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('playing')), 20); return Promise.resolve(); }; });   // ağsız sahte oynatma
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: [{ id: 'controls', w: 1, h: 1, hidden: false }, { id: 'radio', w: 1, h: 1, hidden: true }] });
+  await page.waitForSelector('#sbRd');
+  assert.equal(await page.locator('.w[data-id=radio]').evaluate((e) => e.getBoundingClientRect().width).catch(() => 0), 0, 'widget ekranda yok');
+  await tap(page, '#sbRd .sb-rdn');
+  assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Habertürk');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
+  await ctx.close();
+});
+
+/* Dar ekranlarda (hücre 90–125 px) da her şey kutunun içinde kalmalı */
+for (const vp of [{ width: 1280, height: 720 }, { width: 1366, height: 768 }, { width: 1536, height: 864 }, { width: 1920, height: 1080 }]) {
+  test(`Hava ve Radyo 1×1 ${vp.width}×${vp.height} ekranda taşmaz (çalarken de)`, async () => {
+    const ctx = await newContext(browser, { viewport: vp, mocks: [[/api\.open-meteo\.com\/v1\/forecast/, (r) => r.fulfill(json(forecast))]] });
+    const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1, 'pano.radio.last': '"odtu"' }, layout: LAYOUT });
+    await page.waitForSelector('.w[data-id=weather] .wx-mini');
+    const wx = '.w[data-id=weather]', rd = '.w[data-id=radio]';
+    const size = await page.$eval(rd, (e) => { const r = e.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
+    const bad1 = await inside(page, wx, ['.wx-place', '.wx-icon svg', '.wx-temp', '.wx-cond', '.wx-mini']);
+    await page.evaluate((rd) => { document.querySelector(rd + ' .rd').classList.add('live'); document.querySelector(rd + ' .rd-st').innerHTML = '<span class="rd-badge"><i></i>CANLI</span><span class="rd-br">64 kbps</span>'; }, rd);
+    const bad2 = await inside(page, rd, [...(size[0] > 135 ? ['.rd-disc'] : []), '.rd-nm', '.rd-st', '.rd-badge', '.rd-eq', '.rd-pv', '.rd-pl', '.rd-nx', '.rd-vol', '.rd-vol input']);
+    assert.deepEqual([bad1, bad2, size], [[], [], size], `${vp.width}×${vp.height} kutu ${size}`);
+    await ctx.close();
+  });
+}

@@ -184,7 +184,8 @@ test('Sistem Durumu: widget\'ların kendi canlı durumu (başarısız çekim) li
   const ctx = await newContext(browser, { mocks: sysMocks() });
   const { page } = await openPage(ctx, srv.url);
   await page.waitForFunction(() => typeof status === 'function' && !!document.querySelector('#sbMs'));
-  await page.evaluate(() => { status('wx', true); status('fx', false); });
+  await page.waitForFunction(() => SRC.fx && SRC.wx, null, { timeout: 30000 });   // widget'ların kendi ilk çekimi bitsin (sonradan üstüne yazmasın)
+  await page.evaluate(() => { status('wx', true); status('fx', false); sysPaint(); });
   await page.waitForFunction(() => document.querySelector('#sbMs').dataset.state === 'bad', null, { timeout: 30000 });
   const rows = await popup(page);
   assert.equal(rows.find((r) => r.n === 'Hava').s, 'ok');
