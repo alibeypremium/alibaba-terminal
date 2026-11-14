@@ -124,6 +124,7 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 @container (max-width:420px){.rd-br{display:none}}
 .rd-pl{appearance:none;border:0;width:38px;height:38px;border-radius:50%;background:var(--acc);color:#6b1d2a;cursor:pointer;display:grid;place-items:center;flex:none;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:transform .15s}
 .rd-pl:active{transform:scale(.94)}.rd-pl svg{width:19px;height:19px}
+.rd-tr{display:flex;align-items:center;gap:10px;flex:none}
 .rd-sk{appearance:none;border:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.14);color:var(--t);cursor:pointer;display:grid;place-items:center;flex:none}
 .rd-sk svg{width:14px;height:14px}
 .rd-vol{display:flex;align-items:center;gap:8px;flex:none;color:var(--t2)}

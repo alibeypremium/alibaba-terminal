@@ -40,7 +40,7 @@ test('Radyo ODTÜ: yayın donunca otomatik yeniden bağlanır', { skip: !hasFfmp
   ] });
   const { page } = await openPage(ctx, srv.url);
   const W = page.locator('.w[data-id=radio]');
-  await W.locator('.rd-it[data-k=odtu]').click();
+  await W.locator('.rd-it[data-k=odtu]').dispatchEvent('click');   // 1×1 görünümde kanal listesi gizli: tıklamayı doğrudan gönder
   const has = (re) => page.waitForFunction((s) => new RegExp(s).test(document.querySelector('.w[data-id=radio] .rd-st')?.innerText || ''), re, { timeout: 40000 });
   await has('CANLI');
   assert.equal(conns, 1);

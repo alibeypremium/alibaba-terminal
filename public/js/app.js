@@ -10,9 +10,9 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  events:{title:'FİLMLER',def:[3,2],mount:mountEvents},
  games:{title:'Oyunlar',def:[3,2],mount:mountGames},
  ps:{title:'PLAYSTATION',def:[3,2],mount:mountPS},
- weather:{title:'Hava Durumu',def:[2,1],mount:mountWeather},
+ weather:{title:'Hava Durumu',def:[1,1],mount:mountWeather},
  controls:{title:'Kontrol',def:[1,1],mount:mountControls},
- radio:{title:'Radyo',def:[3,1],mount:mountRadio},
+ radio:{title:'Radyo',def:[1,1],mount:mountRadio},
  tv:{title:'TradingView',def:[2,1],mount:mountTV},
  notes:{title:'Notlarım',def:[3,1],hide:true,mount:mountNotes},
  kurul:{title:'Dini Sorular',def:[3,1],hide:true,mount:mountKurul},
@@ -22,7 +22,7 @@ const grid=$('#grid');
 const defaultLayout=()=>Object.keys(REG).map(id=>({id,w:REG[id].def[0],h:REG[id].def[1],hidden:!!REG[id].hide||id==='games'}));   /* varsayılan düzen: 12 sütun; Oyunlar widget'ı varsayılan olarak kapalı, PlayStation 3×2 */
 let layout=LS.get('pano.layout.v3',null);
 const freshLayout=!Array.isArray(layout);
-if(freshLayout){layout=defaultLayout();LS.set('pano.controls.size',1);LS.set('pano.ps.size',2)}   /* yeni kurulumda tek seferlik boyut göçleri atlanır */
+if(freshLayout){layout=defaultLayout();LS.set('pano.controls.size',1);LS.set('pano.ps.size',2);LS.set('pano.rw.size',1)}   /* yeni kurulumda tek seferlik boyut göçleri atlanır */
 layout=layout.map(l=>l&&l.id==='kantan'?{...l,id:'tech'}:l);   /* eski Kantan widget'ının yerini ve boyutunu koru */
 layout=layout.filter(l=>REG[l.id]);
 try{Object.keys(localStorage).filter(k=>k.startsWith('pano.fb.')||k.startsWith('pano.x.')).forEach(k=>localStorage.removeItem(k))}catch{}   /* kaldırılan Futbol ve X widget'larının eski kayıtları */
@@ -30,14 +30,16 @@ Object.keys(REG).forEach(id=>{if(!layout.find(l=>l.id===id))layout.push({id,w:RE
 layout.forEach(l=>{if(l.id==='controls')l.hidden=false});
 if(LS.get('pano.controls.size',0)!==1){const c=layout.find(l=>l.id==='controls');if(c){c.w=1;c.h=1}LS.set('pano.controls.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Kontrol 1x1 olsun */
 if(LS.get('pano.ps.size',0)!==2){const c=layout.find(l=>l.id==='ps');if(c){c.w=3;c.h=3}LS.set('pano.ps.size',2);LS.set('pano.layout.v3',layout)}   /* tek seferlik: PlayStation widget'ı 4×2 olsun */
+if(LS.get('pano.rw.size',0)!==1){['radio','weather'].forEach(id=>{const c=layout.find(l=>l.id===id);if(c){c.w=1;c.h=1}});LS.set('pano.rw.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Radyo ve Hava 1x1 olsun */
 const saveLayout=()=>LS.set('pano.layout.v3',layout);
 const items={};
 let cols=12,gap=14,cellW=150,cellH=150;
 
-/* Kontrol widget'ı 1 sütun olabilir; diğerleri en az 2. */
-/* Tablet (6 sütun): grafik, hava ve oyun widget'ları en az 3 sütun × 2 satır olsun */
-const TAB_MIN={ps:[3,3],radio:[3,2],tv:[3,2],weather:[3,2],games:[3,2]};
-function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(id==='controls'?1:2,w,m))}
+/* Kontrol, Radyo ve Hava widget'ı 1 sütun olabilir; diğerleri en az 2. */
+const ONE_COL=new Set(['controls','radio','weather']);
+/* Tablet (6 sütun): grafik ve oyun widget'ları en az 3 sütun × 2 satır olsun */
+const TAB_MIN={ps:[3,3],tv:[3,2],games:[3,2]};
+function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(ONE_COL.has(id)?1:2,w,m))}
 /* Mobilde (4 sütun) hücreler küçük kalır; grafik, hava, namaz saatleri ve notlar için asgari yükseklik */
 const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,kurul:3,fx:3,notes:3,controls:2};
 function effH(h,id){return cols===4?Math.max(h+1,MOB_MIN[id]||0):cols===6&&TAB_MIN[id]?Math.max(h,TAB_MIN[id][1]):h}
@@ -223,7 +225,7 @@ grid.addEventListener('pointerdown',e=>{
   body.classList.add('is-dragging');
   const mv=ev=>{
     if(ev.pointerId!==pid)return;
-    const nw=Math.max(l.id==='controls'?1:2,Math.min(cols,w0+Math.round((ev.clientX-sx)/step)));
+    const nw=Math.max(ONE_COL.has(l.id)?1:2,Math.min(cols,w0+Math.round((ev.clientX-sx)/step)));
     const nh=Math.max(1,Math.min(10,h0+Math.round((ev.clientY-sy)/stepY)));
     if(cols!==4)l.w=nw;
     l.h=cols===4?Math.max(1,nh-1):nh;applySize(el,l);

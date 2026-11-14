@@ -247,3 +247,29 @@
 .sy-f span{flex:1}
 .sy-re{appearance:none;border:1px solid var(--hairline);background:var(--glass);color:var(--fg);font:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
 @media (max-width:560px){.sy-ov{padding:0}.sy{width:100%;height:100%;border-radius:0}.sy-v{max-width:44%}}
+
+
+/* ====== 1×1 (dar kare) görünümler: Hava ve Radyo ====== */
+.wx-mini{display:none}
+@container (max-width:210px){
+  .wx{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;gap:0 6px;align-items:center}
+  .wx-top{display:contents}
+  .wx-place{grid-area:1/1/2/3;font-size:12.5px;min-width:0}
+  .wx-place svg{flex:none}
+  .wx-main{grid-area:2/1/3/3;order:0;flex:none;display:flex;align-items:center;justify-content:flex-start;gap:6px;min-height:0}
+  .wx-icon svg{width:38px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
+  .wx-temp{font-size:42px;font-weight:300;letter-spacing:-.05em}
+  .wx-cond{grid-area:3/1;font-size:11px;text-align:left;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t2)}
+  .wx-mini{display:block;grid-area:3/2;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+}
+@container (max-width:230px){
+  .rd{gap:0}
+  .rd-now{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:7px 9px;align-items:center;align-content:center;padding:8px 9px;flex:1;min-height:0}
+  .rd-disc{display:grid!important;width:38px;height:38px}
+  .rd-disc .rd-lg{width:23px;height:23px;font-size:6.5px}
+  .rd-nm{font-size:13px}
+  .rd-tr{grid-column:1/-1;justify-content:center;gap:12px}
+  .rd-sk{display:grid!important;width:30px;height:30px}
+  .rd-pl{width:36px;height:36px}
+  .rd-ctl{display:none}
+}

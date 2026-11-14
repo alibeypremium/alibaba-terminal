@@ -203,6 +203,7 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#sb
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='sbMs'){e.preventDefault();sysOpenUi()}});
 bus.addEventListener('refresh',()=>sysPass(true));
 addEventListener('online',()=>sysPass(true));addEventListener('offline',()=>sysPass(true));
-setTimeout(()=>sysPass(false),600);
+/* ilk kontrol sayfa yüklenip tarayıcı boşa çıkana dek (≥5 sn) ertelenir: açılış ağını ve işlemciyi yarıştırmaz */
+setTimeout(()=>{const go=()=>sysPass(false);if(window.requestIdleCallback)requestIdleCallback(go,{timeout:6000});else go()},5000);
 setInterval(()=>{if(!document.hidden)sysPass(false)},60e3);
 setInterval(sysPaint,30e3);

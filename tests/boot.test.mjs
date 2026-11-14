@@ -38,8 +38,8 @@ test('açılışta hata yok; varsayılan düzen 1920×909\'da beklenen yerde', a
   const want = {
     gnews: [16, 121, 462, 380], youtube: [492, 121, 937, 511], tech: [1443, 121, 462, 380],
     prayer: [16, 515, 462, 117], fx: [1443, 515, 462, 117], daily: [16, 646, 462, 117],
-    events: [492, 646, 462, 249], ps: [967, 646, 462, 249], weather: [1443, 646, 303, 117],
-    controls: [1760, 646, 145, 117], radio: [16, 778, 462, 117], tv: [1443, 778, 303, 117],
+    events: [492, 646, 462, 249], ps: [967, 646, 462, 249], weather: [1443, 646, 145, 117],
+    controls: [1601, 646, 145, 117], radio: [1760, 646, 145, 117], tv: [16, 778, 303, 117],
   };
   for (const [id, w] of Object.entries(want)) {
     assert.ok(rects[id], id + ' widget\'ı yok');

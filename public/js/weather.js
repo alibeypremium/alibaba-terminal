@@ -74,6 +74,7 @@ function mountWeather(w,root){
     }).join('');
     box.innerHTML='<div class="wx-top"><div class="wx-place">'+I.pin+esc(place.name.split(',')[0])+'</div><div class="wx-cond">'+esc(cond)+'</div></div>'+
       '<div class="wx-main"><div class="wx-icon">'+wxIcon(c.weather_code,day)+'</div><div><div class="wx-temp">'+Math.round(c.temperature_2m)+'°</div></div></div>'+
+      '<div class="wx-mini" title="Gün içi en yüksek / en düşük">'+Math.round(d.temperature_2m_max[0])+'° / '+Math.round(d.temperature_2m_min[0])+'°</div>'+
       '<div class="wx-hilo">Y: '+Math.round(d.temperature_2m_max[0])+'°  D: '+Math.round(d.temperature_2m_min[0])+'° · Hissedilen '+Math.round(c.apparent_temperature)+'° · Nem %'+Math.round(c.relative_humidity_2m)+' · Rüzgâr '+Math.round(c.wind_speed_10m)+' km/sa</div>'+
       '<div class="wx-hours">'+hours+'</div><div class="wx-days noscroll">'+days+'</div>';
     paintWeek();

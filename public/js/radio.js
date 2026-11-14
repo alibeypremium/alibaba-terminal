@@ -21,12 +21,12 @@ function mountRadio(w,root){
   const lastK=LS.get('pano.radio.last','');cur=CH.find(c=>c.k===lastK)||null;
   const audio=new Audio();audio.preload='none';audio.volume=vol;
   root.innerHTML='<div class="rd"><div class="rd-now"><div class="rd-disc" aria-hidden="true"></div><div class="rd-inf"><b class="rd-nm">Bir kanal seç</b><span class="rd-sl"><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="rd-st">Hazır</span></span></div>'+
-    '<button class="rd-sk rd-pv" type="button" aria-label="Önceki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button><button class="rd-pl" type="button" aria-label="Çal / durdur"></button><button class="rd-sk rd-nx" type="button" aria-label="Sonraki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button></div>'+
+    '<div class="rd-tr"><button class="rd-sk rd-pv" type="button" aria-label="Önceki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button><button class="rd-pl" type="button" aria-label="Çal / durdur"></button><button class="rd-sk rd-nx" type="button" aria-label="Sonraki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button></div></div>'+
     '<div class="rd-ctl"><div class="rd-list noscroll"></div>'+
     '<div class="rd-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"></div>'+'</div></div>';
   let hls=null,gen=0;
   const killHls=()=>{gen++;if(hls){try{hls.destroy()}catch{}hls=null}};
-  w._dispose=()=>{killHls();clearTimeout(stT);try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
+  w._dispose=()=>{killHls();clearTimeout(stT);clearTimeout(volT);try{audio.pause();audio.removeAttribute('src');audio.load()}catch{}};
   const $r=s=>$(s,root),disc=$r('.rd-disc'),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
   rng.value=Math.round(vol*100);
   const IC={play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'};
@@ -112,6 +112,13 @@ function mountRadio(w,root){
   const step=d=>{const i=cur?CH.findIndex(c=>c.k===cur.k):-1;play(CH[(i+d+CH.length)%CH.length])};
   $r('.rd-pv').addEventListener('click',()=>step(-1));$r('.rd-nx').addEventListener('click',()=>step(1));
   rng.addEventListener('input',()=>{vol=rng.value/100;audio.volume=vol;LS.set('pano.radio.vol',vol)});
+  /* 1×1 görünümde ses çubuğu gizlidir: fare tekerleği sesi ayarlar */
+  let volT=0;
+  root.addEventListener('wheel',e=>{
+    if(getComputedStyle($r('.rd-ctl')).display!=='none'||!e.target.closest('.rd'))return;
+    e.preventDefault();vol=Math.max(0,Math.min(1,Math.round((vol-Math.sign(e.deltaY)*.05)*100)/100));audio.volume=vol;rng.value=Math.round(vol*100);LS.set('pano.radio.vol',vol);
+    stt.className='rd-st';stt.textContent='Ses %'+Math.round(vol*100);clearTimeout(volT);volT=setTimeout(paintNow,1200);
+  },{passive:false});
   lst.addEventListener('click',e=>{const b=e.target.closest('.rd-it');if(b)play(CH.find(c=>c.k===b.dataset.k))});
   async function resolve(){
     const qs=[...new Set(CH.flatMap(c=>c.q))],pool={};
