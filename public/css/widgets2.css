@@ -336,9 +336,19 @@
 .hd-sel select:disabled{opacity:.5}
 .hd-i em{display:block;margin-top:3px;font-style:normal;font-size:12.5px;line-height:1.45;color:var(--fg2)}
 .hd-t{margin:16px 0 8px;font-size:16.5px;line-height:1.7}
-.hd-t strong{font-weight:800}
 .hd-ref{font-size:12.5px;line-height:1.5;color:var(--fg2);padding-top:8px;border-top:1px solid var(--hairline)}
 .hd-lk{appearance:none;border:0;background:transparent;color:inherit;font:inherit;padding:0;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
 .hd-nav{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
 .hd-nav button{appearance:none;border:1px solid var(--hairline);background:var(--glass);color:var(--fg);font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;cursor:pointer}
 @media (max-width:560px){.hd-sel{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Hadis: Ayet · Hadis · Esma'daki Hadis sekmesiyle aynı bordo renk */
+.w[data-id=kurul][data-tab=h]{--w-bg:linear-gradient(160deg,rgba(120,32,52,.95),rgba(52,16,32,.97));--t:#fbeee2;--t2:rgba(251,238,226,.66);--acc:#ffb988;--line:rgba(251,238,226,.16)}
+.w[data-id=kurul][data-tab=h] .kr-tabs{background:rgba(251,238,226,.12)}
+.w[data-id=kurul][data-tab=h] .kr-tabs button{color:rgba(251,238,226,.7)}
+.w[data-id=kurul][data-tab=h] .kr-tabs button.on{background:#ffb988;color:#521630}
+.hd-ov .kr{--pop:#3a1424;--fg:#fbeee2;--fg2:rgba(251,238,226,.68);--hairline:rgba(251,238,226,.16);--glass:rgba(251,238,226,.08);background:linear-gradient(160deg,#5a1a32,#34101f);color-scheme:dark}
+.hd-ov .kr-s:focus{border-color:#ffb988}
+.hd-ov .kr-back,.hd-ov .kr-cat,.hd-ov .kr-f a{color:#ffb988}
+.hd-ov .kr-i b,.hd-ov .kr-q,.hd-ov .kr-cat{font-weight:400}
+.hd-ov select,.hd-ov option{background:#3a1424;color:#fbeee2}
+.hd-ov .hd-sel select{color-scheme:dark}

@@ -117,7 +117,7 @@ function mountKurul(w,root){
     while(hi-lo>.4){const m=(lo+hi)/2;cq.style.fontSize=m+'px';if(cq.scrollHeight<=cq.clientHeight+1){best=m;lo=m}else hi=m}
     cq.style.fontSize=best+'px';
   };
-  const paintTabs=()=>{$$('.kr-tabs button',root).forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});card.setAttribute('aria-label',tab==='h'?'Hadisi aç':'Soruyu ve cevabı aç');card.dataset.tab=tab};
+  const paintTabs=()=>{$$('.kr-tabs button',root).forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});card.setAttribute('aria-label',tab==='h'?'Hadisi aç':'Soruyu ve cevabı aç');card.dataset.tab=tab;w.dataset.tab=tab;const lg=$('.hd .logo',root);if(lg)lg.style.background=ICON[tab==='h'?'hadis':'kurul'].bg};
   const draw=()=>{
     paintTabs();cf.textContent='';
     if(tab==='h'){

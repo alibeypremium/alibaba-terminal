@@ -50,9 +50,9 @@ test('Hadis: kartta günün hadisi her saat diliminde aynı; tıklayınca büyü
     txts.push(await page.textContent(W + ' .kr-cq'));
     if (tz === 'Europe/Istanbul') {
       await tap(page, W + ' .kr-card');
-      await page.waitForSelector('.kr-ov .hd-t strong');
-      assert.equal((await page.textContent('.hd-t strong')).trim(), txts[0].trim());
-      assert.ok(+(await page.$eval('.hd-t strong', (e) => getComputedStyle(e).fontWeight)) >= 700);
+      await page.waitForSelector('.kr-ov .hd-t span');
+      assert.equal((await page.textContent('.hd-t span')).trim(), txts[0].trim());
+      assert.ok(+(await page.$eval('.hd-t span', (e) => getComputedStyle(e).fontWeight)) <= 400, 'pencere içi yazı kalın değil');
       assert.ok((await page.textContent('.hd-ref')).length > 3);
       await page.keyboard.press('Escape');   // detay → liste
       assert.ok(await page.$('.kr-ov .hd-i'));
@@ -68,9 +68,9 @@ test('Hadis penceresi: arama (metin, râvi, kaynak), süzgeçler, önceki/sonrak
   const ctx = await newContext(browser, { viewport: { width: 1280, height: 800 } });
   const { page } = await openH(ctx);
   await tap(page, W + ' .kr-card');
-  await page.waitForSelector('.kr-ov .hd-t strong');
+  await page.waitForSelector('.kr-ov .hd-t span');
   await tap(page, '.kr-ov [data-a=prev]');
-  await page.waitForFunction(() => !document.querySelector('.hd-t.kr-wait') && document.querySelector('.hd-t strong'));
+  await page.waitForFunction(() => !document.querySelector('.hd-t.kr-wait') && document.querySelector('.hd-t span'));
   await page.keyboard.press('Escape');   // detay → liste
   await page.waitForSelector('.kr-ov .hd-i');
   const n0 = await page.$$eval('.kr-ov .hd-i', (x) => x.length);
@@ -109,7 +109,7 @@ test('Hadis penceresi: detayda râvi/bölüm bağlantısı o süzgeci uygular', 
   const ctx = await newContext(browser, { viewport: { width: 1280, height: 800 } });
   const { page } = await openH(ctx);
   await tap(page, W + ' .kr-card');
-  await page.waitForSelector('.kr-ov .hd-t strong');
+  await page.waitForSelector('.kr-ov .hd-t span');
   const hasR = await page.$('.hd-lk[data-r]');
   if (hasR) { await tap(page, '.hd-lk[data-r]'); await page.waitForSelector('.hd-i'); assert.notEqual(await page.$eval('[data-f=r]', (e) => e.value), ''); }
   await ctx.close();

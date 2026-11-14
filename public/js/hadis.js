@@ -33,7 +33,7 @@ function hdOpen(start){
     '<div class="kr-tools"><input type="search" class="kr-s" placeholder="Hadis metni, konu, bölüm, râvi veya kaynak ara" aria-label="Ara" autocomplete="off">'+
     '<div class="hd-sel"><select data-f="s" aria-label="Kaynak"></select><select data-f="b" aria-label="Bölüm"></select><select data-f="k" aria-label="Konu başlığı"></select><select data-f="r" aria-label="Râvi"></select></div></div>'+
     '<div class="kr-b noscroll" tabindex="-1"><div class="kr-wait">Yükleniyor…</div></div>'+
-    '<div class="kr-f">Kütüb-i Sitte · hadis metni kalın yazılmıştır · <span class="hd-n"></span></div></div>';
+    '<div class="kr-f">Kütüb-i Sitte · <span class="hd-n"></span></div></div>';
   document.body.appendChild(ov);
   const body=$('.kr-b',ov),inp=$('.kr-s',ov),sel={};
   ['s','b','k','r'].forEach(k=>sel[k]=$('[data-f='+k+']',ov));
@@ -91,7 +91,7 @@ function hdOpen(start){
     body.scrollTop=0;
     try{
       const x=await hdText(ix,i);if(cur!==i||view!=='detail')return;
-      const t=$('.hd-t',body);t.className='hd-t';t.innerHTML='<strong>'+esc(x.t)+'</strong>';
+      const t=$('.hd-t',body);t.className='hd-t';t.innerHTML='<span>'+esc(x.t)+'</span>';
       $('.hd-ref',body).textContent=x.f;
     }catch{if(cur===i){const t=$('.hd-t',body);if(t)t.textContent='Hadis metni şu an alınamadı. Bağlantını kontrol edip tekrar dene.'}}
   };
