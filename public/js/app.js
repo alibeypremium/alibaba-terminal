@@ -16,7 +16,7 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  tv:{title:'TradingView',def:[2,1],mount:mountTV},
  notes:{title:'Notlarım',def:[3,1],hide:true,mount:mountNotes},
  kurul:{title:'Dini Sorular',def:[3,1],hide:true,mount:mountKurul},
- sys:{title:'Sistem Durumu',def:[3,2],hide:true,mount:mountSystem}
+ sys:{title:'Sistem Durumu',def:[1,1],hide:true,mount:mountSystem}
 };
 const PRESETS={XS:[2,1],S:[2,2],M:[3,2],L:[4,3],XL:[6,4]};
 const grid=$('#grid');
@@ -29,7 +29,8 @@ layout=layout.filter(l=>REG[l.id]);
 try{Object.keys(localStorage).filter(k=>k.startsWith('pano.fb.')||k.startsWith('pano.x.')).forEach(k=>localStorage.removeItem(k))}catch{}   /* kaldırılan Futbol ve X widget'larının eski kayıtları */
 Object.keys(REG).forEach(id=>{if(!layout.find(l=>l.id===id))layout.push({id,w:REG[id].def[0],h:REG[id].def[1],hidden:id!=='controls'&&id!=='radio'&&id!=='ps'})});
 layout.forEach(l=>{if(l.id==='controls')l.hidden=false});
-if(LS.get('pano.controls.size',0)!==1){const c=layout.find(l=>l.id==='controls');if(c){c.w=1;c.h=1}LS.set('pano.controls.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Kontrol 1x1 olsun */   /* Düzenle düğmesi bu widget'ta: hiçbir zaman gizlenmez */
+if(LS.get('pano.controls.size',0)!==1){const c=layout.find(l=>l.id==='controls');if(c){c.w=1;c.h=1}LS.set('pano.controls.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Kontrol 1x1 olsun */
+if(LS.get('pano.sys.size',0)!==1){const c=layout.find(l=>l.id==='sys');if(c){c.w=1;c.h=1}LS.set('pano.sys.size',1);LS.set('pano.layout.v3',layout)}   /* tek seferlik: Sistem Durumu 1x1 olsun */   /* Düzenle düğmesi bu widget'ta: hiçbir zaman gizlenmez */
 if(LS.get('pano.ps.size',0)!==2){const c=layout.find(l=>l.id==='ps');if(c){c.w=3;c.h=3}LS.set('pano.ps.size',2);LS.set('pano.layout.v3',layout)}   /* tek seferlik: PlayStation widget'ı 4×2 olsun */
 const saveLayout=()=>LS.set('pano.layout.v3',layout);
 const items={};
@@ -38,9 +39,9 @@ let cols=12,gap=14,cellW=150,cellH=150;
 /* Kontrol widget'ı 1 sütun olabilir; diğerleri en az 2. */
 /* Tablet (6 sütun): grafik, hava ve oyun widget'ları en az 3 sütun × 2 satır olsun */
 const TAB_MIN={ps:[3,3],radio:[3,2],tv:[3,2],weather:[3,2],games:[3,2]};
-function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(id==='controls'?1:2,w,m))}
+function effW(w,id){if(cols===4)return 4;const m=cols===6&&TAB_MIN[id]?TAB_MIN[id][0]:0;return Math.min(cols,Math.max(id==='controls'||id==='sys'?1:2,w,m))}
 /* Mobilde (4 sütun) hücreler küçük kalır; grafik, hava, namaz saatleri ve notlar için asgari yükseklik */
-const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,kurul:3,sys:5,fx:3,notes:3,controls:2};
+const MOB_MIN={ps:4,radio:4,tv:4,weather:3,prayer:3,kurul:3,sys:2,fx:3,notes:3,controls:2};
 function effH(h,id){return cols===4?Math.max(h+1,MOB_MIN[id]||0):cols===6&&TAB_MIN[id]?Math.max(h,TAB_MIN[id][1]):h}
 function applySize(el,l){el.style.gridColumn='span '+effW(l.w,l.id);el.style.gridRow='span '+effH(l.h,l.id);paintSizes(el,l)}
 function paintSizes(el,l){$$('.w-sizes button',el).forEach(b=>{const p=PRESETS[b.dataset.s];b.classList.toggle('on',p[0]===l.w&&p[1]===l.h)})}
@@ -224,7 +225,7 @@ grid.addEventListener('pointerdown',e=>{
   body.classList.add('is-dragging');
   const mv=ev=>{
     if(ev.pointerId!==pid)return;
-    const nw=Math.max(l.id==='controls'?1:2,Math.min(cols,w0+Math.round((ev.clientX-sx)/step)));
+    const nw=Math.max(l.id==='controls'||l.id==='sys'?1:2,Math.min(cols,w0+Math.round((ev.clientX-sx)/step)));
     const nh=Math.max(1,Math.min(10,h0+Math.round((ev.clientY-sy)/stepY)));
     if(cols!==4)l.w=nw;
     l.h=cols===4?Math.max(1,nh-1):nh;applySize(el,l);

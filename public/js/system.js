@@ -2,16 +2,17 @@
 /* AliBaba Terminal · system.js — klasik betik (modül değil): tüm js/*.js dosyaları index.html'deki sırayla yüklenir ve aynı genel kapsamı paylaşır. */
 /* ---------- Sistem Durumu: sitenin bağlı olduğu her şeyin (API, sunucu, veri dosyası, Actions, tarayıcı) sağlık panosu ----------
    Kontroller gerçek istekle yapılır; sonuç: ok (yeşil) · warn (sarı, dikkat) · bad (kırmızı, çalışmıyor) · off (henüz bilinmiyor).
-   Kart, çalışmayan şeyleri doğrudan gösterir; tıklayınca tüm kontroller ayrıntısıyla açılır. */
+   Kart, çalışmayan hizmeti doğrudan gösterir; tıklayınca tüm kontroller ayrıntısıyla açılır. */
 const SY_RAW='https://raw.githubusercontent.com/alibeypremium/alibaba-terminal/';
 const SY_GH='https://api.github.com/repos/alibeypremium/alibaba-terminal/actions/workflows/';
 const SY_LBL={ok:'Çalışıyor',warn:'Dikkat',bad:'Çalışmıyor',off:'Bekliyor'};
 const syDur=ms=>{const m=Math.max(0,Math.round(ms/6e4));return m<90?m+' dk':m<2880?Math.round(m/60)+' sa':Math.round(m/1440)+' gün'};
 const syTime=t=>new Date(t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-async function syFetch(url,{ms=9000,mode,abortAfterHeaders}={}){
+async function syFetch(url,{ms=9000,mode,cache,abortAfterHeaders}={}){
   const c=new AbortController(),tm=setTimeout(()=>c.abort(),ms),t0=performance.now();
   try{
-    const r=await fetch(url,{signal:c.signal,mode,cache:'no-store',credentials:'omit'});
+    /* cache:'no-store' tarayıcıya Cache-Control başlığı ekletir; bu, CORS vekillerinde ön kontrol (preflight) başarısızlığına yol açar — yalnızca aynı kaynakta kullan */
+    const r=await fetch(url,{signal:c.signal,mode,cache,credentials:'omit'});
     const took=Math.round(performance.now()-t0);
     if(abortAfterHeaders)c.abort();   /* yalnızca yanıtın geldiğini gör, gövdeyi indirme */
     return{r,took};
@@ -68,7 +69,7 @@ const SY_DEFS=[
   {id:'ver',g:'Tarayıcı ve site',n:'Site sürümü',af:'tüm site',fix:'Ctrl+Shift+R ile yenile.',every:10*6e4,run:async()=>{
     const mine=((document.querySelector('script[src*="js/core.js"]')||{}).src||'').match(/[?&]v=([\w]+)/),m=mine&&mine[1];
     if(!m||m==='__V__')return{s:'ok',d:'yerel sürüm'};
-    const{r}=await syFetch(location.pathname+'?_='+Date.now());
+    const{r}=await syFetch(location.pathname+'?_='+Date.now(),{cache:'no-store'});
     if(!r.ok)return{s:'warn',d:syHttp(r)};
     const t=await r.text(),n=(t.match(/js\/core\.js\?v=([\w]+)/)||[])[1];
     return!n||n===m?{s:'ok',d:'güncel ('+m.slice(0,7)+')'}:{s:'warn',d:'yeni sürüm yayında (sen: '+m.slice(0,7)+' · yeni: '+n.slice(0,7)+')'};
@@ -138,7 +139,6 @@ function sySummary(rows){
   const state=!known?'run':c.bad?'bad':c.warn?'warn':'ok';
   return{c,known,pct,state};
 }
-const syRing=(pct,state)=>{const R=26,C=2*Math.PI*R;return'<svg class="sy-ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="'+R+'" class="sy-rt"/><circle cx="32" cy="32" r="'+R+'" class="sy-rv" stroke-dasharray="'+(C*pct/100).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" class="sy-rp">'+(state==='run'?'…':pct+'%')+'</text></svg>'};
 
 function sysOpen(getRows,recheck){
   if($('.sy-ov'))return;
@@ -157,7 +157,7 @@ function sysOpen(getRows,recheck){
       const rs=rows.filter(r=>r.g===g),sh=onlyBad?rs.filter(r=>r.s==='bad'||r.s==='warn'):rs;if(!sh.length)return'';
       const gs=sySummary(rs);
       return'<section class="sy-g"><h4><span class="sy-gd" data-s="'+gs.state+'"></span>'+esc(g)+'<em>'+gs.c.ok+'/'+gs.known+'</em></h4>'+sh.map(r=>'<div class="sy-r" data-s="'+r.s+'"><span class="sy-d" data-s="'+r.s+'"></span><div class="sy-n"><b>'+esc(r.n)+'</b><small>'+esc(r.af?'Etkilediği: '+r.af:'')+'</small>'+((r.s==='bad'||r.s==='warn')&&r.fix?'<small class="sy-fx">'+esc(r.fix)+'</small>':'')+'</div><div class="sy-v"><span>'+esc(r.d||SY_LBL[r.s])+'</span>'+(r.ms!=null?'<small>'+r.ms+' ms</small>':'')+'</div></div>').join('')+'</section>';
-    }).join('')||'<div class="sy-ok">Çalışmayan ya da dikkat isteyen bir şey yok ✓</div>';
+    }).join('')||'<div class="sy-ok">Sorun yok: tüm kontroller başarılı ✓</div>';
   };
   const tick=setInterval(paint,5000);
   ov.addEventListener('click',e=>{
@@ -174,23 +174,20 @@ function mountSystem(w,root){
   const res=new Map();   /* id → {s,d,ms,t} */
   const running=new Set();
   let last=0,modal=null;
-  root.innerHTML='<div class="sy-w" data-state="run">'+hd('sys','Sistem Durumu','<button class="ibtn" type="button" data-a="re" aria-label="Şimdi kontrol et" title="Şimdi kontrol et">'+I.refresh+'</button>')+
-    '<div class="sy-card" role="button" tabindex="0" aria-label="Tüm kontrolleri aç"><div class="sy-top"><div class="sy-rg"></div><div class="sy-sm"><b class="sy-hl"></b><span class="sy-sub"></span></div></div><div class="sy-pl"></div><div class="sy-dots" aria-hidden="true"></div></div></div>';
+  root.innerHTML='<div class="sy-w" data-state="run">'+hd('sys','Sistem','<button class="ibtn" type="button" data-a="re" aria-label="Şimdi kontrol et" title="Şimdi kontrol et">'+I.refresh+'</button>')+
+    '<div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><div class="sy-row"><div class="sy-led" aria-hidden="true"></div><b class="sy-hl"></b></div><span class="sy-sub"></span><div class="sy-bars" aria-hidden="true"></div></div></div>';
   const wrap=$('.sy-w',root),card=$('.sy-card',root);
   const rows=()=>{
     const base=SY_DEFS.map(d=>{const r=res.get(d.id);return{id:d.id,g:d.g,n:d.n,af:d.af,fix:d.fix,s:r?r.s:'off',d:r?r.d:'henüz kontrol edilmedi',ms:r&&r.ms}});
     return base.concat(syLive());
   };
   const paint=()=>{
-    const rs=rows(),sm=sySummary(rs),bad=rs.filter(r=>r.s==='bad'),warn=rs.filter(r=>r.s==='warn');
+    const rs=rows(),sm=sySummary(rs),bad=rs.filter(r=>r.s==='bad'),warn=rs.filter(r=>r.s==='warn'),probs=bad.concat(warn);
     wrap.dataset.state=sm.state;
-    $('.sy-rg',root).innerHTML=syRing(sm.pct,sm.state);
-    $('.sy-hl',root).textContent=sm.state==='run'?'Kontrol ediliyor…':sm.state==='ok'?'Her şey çalışıyor':bad.length?bad.length+' şey çalışmıyor':warn.length+' şey dikkat istiyor';
-    $('.sy-sub',root).textContent=sm.known?(sm.c.ok+' / '+sm.known+' kontrol yeşil'+(last?' · '+syTime(last).slice(0,5):'')+(running.size?' · yenileniyor':'')):'ilk sonuçlar geliyor';
-    const probs=bad.concat(warn);
-    $('.sy-pl',root).innerHTML=probs.length?probs.slice(0,3).map(r=>'<div class="sy-p" data-s="'+r.s+'"><span class="sy-d" data-s="'+r.s+'"></span><b>'+esc(r.n)+'</b><span>'+esc(r.d)+'</span></div>').join('')+(probs.length>3?'<div class="sy-more">+'+(probs.length-3)+' tane daha · ayrıntı için tıkla</div>':''):
-      '<div class="sy-good">'+(sm.known?'Çalışmayan bir şey yok ✓':'')+'</div>';
-    $('.sy-dots',root).innerHTML=rs.map(r=>'<i data-s="'+r.s+'" title="'+esc(r.n+' · '+(r.d||SY_LBL[r.s]))+'"></i>').join('');
+    $('.sy-hl',root).textContent=sm.state==='run'?'Kontrol ediliyor':sm.state==='ok'?'Tüm sistemler çalışıyor':bad.length?bad.length+' hizmet çalışmıyor':warn.length+' hizmette uyarı';
+    $('.sy-sub',root).textContent=!sm.known?'ilk sonuçlar geliyor':probs.length?probs[0].n+(probs.length>1?' +'+(probs.length-1):''):sm.c.ok+'/'+sm.known+' kontrol'+(last?' · '+syTime(last).slice(0,5):'')+(running.size?' · yenileniyor':'');
+    card.title=probs.length?probs.map(r=>r.n+': '+r.d).join('\n'):'';
+    $('.sy-bars',root).innerHTML=[...new Set(rs.map(r=>r.g))].map(g=>{const gs=sySummary(rs.filter(r=>r.g===g));return'<i data-s="'+(gs.state==='run'?'off':gs.state)+'" title="'+esc(g)+'"></i>'}).join('');
     if(modal&&$('.sy-ov'))modal.paint();
   };
   async function runOne(d){
