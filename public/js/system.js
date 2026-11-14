@@ -166,50 +166,43 @@ function sysOpen(getRows,recheck){
   return{paint};
 }
 
-function mountSystem(w,root){
-  const res=new Map();   /* id → {s,d,ms,t} */
-  const running=new Set();
-  let last=0,modal=null;
-  root.innerHTML='<div class="sy-w" data-state="run"><div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><span class="sy-cap">Sistem</span><div class="sy-row"><i class="sy-led" aria-hidden="true"></i><b class="sy-hl"></b></div><div class="sy-num"></div><div class="sy-bars" aria-hidden="true"></div><span class="sy-sub"></span></div></div>';
-  const wrap=$('.sy-w',root),card=$('.sy-card',root);
-  const rows=()=>{
-    const base=SY_DEFS.map(d=>{const r=res.get(d.id);return{id:d.id,g:d.g,n:d.n,af:d.af,fix:d.fix,s:r?r.s:'off',d:r?r.d:'henüz kontrol edilmedi',ms:r&&r.ms}});
-    return base.concat(syLive());
-  };
-  const paint=()=>{
-    const rs=rows(),sm=sySummary(rs),bad=rs.filter(r=>r.s==='bad'),warn=rs.filter(r=>r.s==='warn'),probs=bad.concat(warn);
-    wrap.dataset.state=sm.state;
-    $('.sy-hl',root).textContent=sm.state==='run'?'Kontrol ediliyor':sm.state==='ok'?'Çalışıyor':bad.length?'Kesinti var':'Uyarı var';
-    $('.sy-num',root).innerHTML=sm.known?'<b>'+sm.c.ok+'</b><span>/'+sm.known+' hizmet</span>':'';
-    $('.sy-sub',root).textContent=!sm.known?'ilk sonuçlar geliyor':probs.length?probs[0].n+(probs.length>1?' +'+(probs.length-1):''):'son kontrol '+(last?syTime(last).slice(0,5):'—')+(running.size?' · yenileniyor':'');
-    card.title=probs.length?probs.map(r=>r.n+': '+r.d).join('\n'):'';
-    $('.sy-bars',root).innerHTML=[...new Set(rs.map(r=>r.g))].map(g=>{const gs=sySummary(rs.filter(r=>r.g===g));return'<i data-s="'+(gs.state==='run'?'off':gs.state)+'" title="'+esc(g)+'"></i>'}).join('');
-    if(modal&&$('.sy-ov'))modal.paint();
-  };
-  async function runOne(d){
-    if(running.has(d.id))return;running.add(d.id);
-    const t0=Date.now();
-    try{
-      if(!navigator.onLine&&d.id!=='net'){res.set(d.id,{s:'off',d:'çevrimdışı, denenmedi',t:Date.now()});return}
-      const r=await d.run();res.set(d.id,{...r,t:Date.now()});
-    }catch(e){res.set(d.id,{s:'bad',d:syErr(e),t:Date.now()})}
-    finally{running.delete(d.id);last=Date.now();paint()}
-  }
-  async function pass(force){
-    const due=SY_DEFS.filter(d=>force||!res.has(d.id)||Date.now()-res.get(d.id).t>=d.every-2000);
-    const q=[...due];const worker=async()=>{while(q.length){await runOne(q.shift())}};
-    paint();await Promise.all([worker(),worker(),worker(),worker(),worker()]);paint();
-  }
-  const recheck=()=>{pass(true)};
-  paint();
-  setTimeout(()=>pass(false),600);
-  every(w,()=>pass(false),60e3);
-  every(w,paint,30e3);
-  onBus(w,'refresh',()=>pass(true));
-  addEventListener('online',()=>pass(true));addEventListener('offline',()=>pass(true));
-  const open=()=>{if(document.body.classList.contains('editing'))return;modal=sysOpen(rows,recheck)};
-  root.addEventListener('click',e=>{
-    if(e.target.closest('.sy-card'))open();
-  });
-  card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+/* Üst çubukta (ms çipinin solunda) duran kalıcı Sistem çipi. Çip topbar.js tarafından yazılır (#sbSys); burada yalnızca boyanır ve tıklaması
+   belge düzeyinde dinlenir — çip yeniden oluşturulsa da bağlantı kopmaz. Kontroller sayfa açıkken kendiliğinden çalışır. */
+const SYS={res:new Map(),running:new Set(),last:0,modal:null};
+function sysRows(){
+  const base=SY_DEFS.map(d=>{const r=SYS.res.get(d.id);return{id:d.id,g:d.g,n:d.n,af:d.af,fix:d.fix,s:r?r.s:'off',d:r?r.d:'henüz kontrol edilmedi',ms:r&&r.ms}});
+  return base.concat(syLive());
 }
+function sysPaint(){
+  const rs=sysRows(),sm=sySummary(rs),probs=rs.filter(r=>r.s==='bad').concat(rs.filter(r=>r.s==='warn')),el=$('#sbSys');
+  if(el){
+    const word=sm.state==='run'?'Kontrol ediliyor':sm.state==='ok'?'Çalışıyor':sm.c.bad?'Kesinti var':'Uyarı var';
+    el.dataset.state=sm.state;el.dataset.busy=SYS.running.size?'1':'';
+    const t=sm.known?sm.c.ok+'/'+sm.known:'…';if($('b',el).textContent!==t)$('b',el).textContent=t;
+    el.title='Sistem: '+word+(sm.known?' · '+sm.c.ok+'/'+sm.known+' hizmet':'')+(probs.length?'\n'+probs.map(r=>'• '+r.n+': '+r.d).join('\n'):'')+'\nAyrıntı için tıkla';
+    el.setAttribute('aria-label','Sistem durumu: '+word+'. Ayrıntıları aç');
+  }
+  if(SYS.modal&&$('.sy-ov'))SYS.modal.paint();
+}
+async function sysRunOne(d){
+  if(SYS.running.has(d.id))return;SYS.running.add(d.id);
+  try{
+    if(!navigator.onLine&&d.id!=='net'){SYS.res.set(d.id,{s:'off',d:'çevrimdışı, denenmedi',t:Date.now()});return}
+    const r=await d.run();SYS.res.set(d.id,{...r,t:Date.now()});
+  }catch(e){SYS.res.set(d.id,{s:'bad',d:syErr(e),t:Date.now()})}
+  finally{SYS.running.delete(d.id);SYS.last=Date.now();sysPaint()}
+}
+async function sysPass(force){
+  const due=SY_DEFS.filter(d=>force||!SYS.res.has(d.id)||Date.now()-SYS.res.get(d.id).t>=d.every-2000);
+  const q=[...due];const worker=async()=>{while(q.length){await sysRunOne(q.shift())}};
+  sysPaint();await Promise.all([worker(),worker(),worker(),worker(),worker()]);sysPaint();
+}
+const sysRecheck=()=>{sysPass(true)};
+function sysOpenUi(){if(document.body.classList.contains('editing')||$('.sy-ov'))return;SYS.modal=sysOpen(sysRows,sysRecheck)}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#sbSys'))sysOpenUi()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='sbSys'){e.preventDefault();sysOpenUi()}});
+bus.addEventListener('refresh',()=>sysPass(true));
+addEventListener('online',()=>sysPass(true));addEventListener('offline',()=>sysPass(true));
+setTimeout(()=>sysPass(false),600);
+setInterval(()=>{if(!document.hidden)sysPass(false)},60e3);
+setInterval(sysPaint,30e3);
