@@ -304,18 +304,45 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .yt-pl svg{width:58px;height:auto;filter:drop-shadow(0 8px 18px rgba(255,0,0,.45))}
 .yt-th em{font-style:normal;font-size:11.5px;line-height:1.4;text-align:center;max-width:92%;color:rgba(255,255,255,.85)}
 
-/* Üst çubuktaki Radyo çipi (hava çipinin solunda) */
-.sb-rd{gap:7px;padding:3px 10px 3px 4px;max-width:190px}
-.sb-rdb{appearance:none;border:0;flex:none;width:22px;height:22px;border-radius:50%;background:var(--fg);color:var(--bg,#111);display:grid;place-items:center;padding:0;cursor:pointer}
-.sb-rdb svg{width:11px;height:11px;display:block}
-.sb-rdn{font-size:11.5px;font-weight:700;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;outline:none}
-.sb-rdn:focus-visible,.sb-rdb:focus-visible{box-shadow:0 0 0 2px #7c8cff}
-.sb-rd .rd-eq{width:15px;height:11px;display:flex}
-.sb-rd .rd-eq i{background:#ff6b5e;height:22%;animation:none}
-.sb-rd[data-state=play] .rd-eq i{animation:rdeq .8s ease-in-out infinite alternate}
+/* Üst çubuktaki Radyo çipi (hava çipinin solunda): ekolayzır simgesi + kanal adı; tıklayınca küçük panel açılır */
+.sb-rd{gap:8px;padding:3px 11px 3px 10px;max-width:170px;cursor:pointer;outline:none}
+.sb-rd:focus-visible{box-shadow:0 0 0 2px #7c8cff}
+.sb-rd[aria-expanded=true]{background:rgba(255,107,94,.22)}
+.sb-rdn{font-size:11.5px;font-weight:700;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-rd .rd-eq{width:15px;height:12px;display:flex}
+.sb-rd .rd-eq i{background:var(--fg2);height:24%;animation:none;opacity:.8}
+.sb-rd[data-state=play] .rd-eq i{background:#ff6b5e;opacity:1;animation:rdeq .8s ease-in-out infinite alternate}
 .sb-rd[data-state=play] .rd-eq i:nth-child(2){animation-duration:.55s}.sb-rd[data-state=play] .rd-eq i:nth-child(3){animation-duration:.95s}.sb-rd[data-state=play] .rd-eq i:nth-child(4){animation-duration:.7s}.sb-rd[data-state=play] .rd-eq i:nth-child(5){animation-duration:.62s}
-.sb-rd[data-state=load] .rd-eq i{animation:rdeq 1.2s ease-in-out infinite alternate;opacity:.6}
-.sb-rd[data-state=err] .rd-eq i,.sb-rd[data-state=na] .rd-eq i{background:#ff453a}
+.sb-rd[data-state=load] .rd-eq i{background:#ffb020;animation:rdeq 1.2s ease-in-out infinite alternate}
+.sb-rd[data-state=err] .rd-eq i,.sb-rd[data-state=na] .rd-eq i{background:#ff453a;opacity:1}
 html[data-lite="1"] .sb-rd .rd-eq i{animation:none!important}
-@media (prefers-reduced-motion:reduce){.sb-rd .rd-eq i{animation:none!important}}
-@media (max-width:520px){.sb-rdn{display:none}.sb-rd{padding-right:8px}}
+@media (prefers-reduced-motion:reduce){.sb-rd .rd-eq i,.rp-eq i{animation:none!important}}
+@media (max-width:520px){.sb-rdn{display:none}.sb-rd{padding:3px 10px}}
+/* Radyo paneli */
+.rp-pop{width:min(310px,calc(100vw - 24px));gap:12px;--acc:#ff6b5e}
+.rp-hd{display:flex;align-items:center;gap:12px}
+.rp-disc{width:48px!important;height:48px!important;flex:none}
+.rp-disc .rd-lg{width:28px;height:28px;font-size:8px}
+.rp-inf{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.rp-nm{font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-sl{display:flex;align-items:center;gap:8px;min-width:0}
+.rp-st{font-size:12px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rp-st.err{color:#ff6b5e}
+.rp-eq{display:flex;width:19px;height:13px}
+.rp-eq i{background:var(--acc);height:22%;animation:none;opacity:.55}
+.rp-pop.live .rp-eq i{opacity:1;animation:rdeq .8s ease-in-out infinite alternate}
+.rp-pop.live .rp-eq i:nth-child(2){animation-duration:.55s}.rp-pop.live .rp-eq i:nth-child(3){animation-duration:.95s}.rp-pop.live .rp-eq i:nth-child(4){animation-duration:.7s}.rp-pop.live .rp-eq i:nth-child(5){animation-duration:.62s}
+html[data-lite="1"] .rp-eq i{animation:none!important}
+.rp-tr{display:flex;align-items:center;justify-content:center;gap:16px}
+.rp-sk,.rp-pl{appearance:none;border:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0;transition:transform .15s}
+.rp-sk{width:36px;height:36px;background:rgba(127,127,140,.2);color:var(--fg)}.rp-sk svg{width:15px;height:15px}
+.rp-pl{width:48px;height:48px;background:var(--acc);color:#fff;box-shadow:0 6px 16px -6px var(--acc)}.rp-pl svg{width:22px;height:22px}
+.rp-sk:active,.rp-pl:active{transform:scale(.94)}
+.rp-sk:focus-visible,.rp-pl:focus-visible,.rp-it:focus-visible{outline:2px solid #7c8cff;outline-offset:2px}
+.rp-vol{display:flex;align-items:center;gap:10px;color:var(--fg2)}
+.rp-vol svg{width:18px;height:18px;flex:none}
+.rp-vol input{flex:1;min-width:0;accent-color:var(--acc);height:18px}
+.rp-vp{width:38px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
+.rp-list{display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;border-top:1px solid var(--hairline)}
+.rp-it{appearance:none;border:0;background:rgba(127,127,140,.16);color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.rp-it.on{background:var(--acc);color:#fff}
+.rp-it .rd-dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}

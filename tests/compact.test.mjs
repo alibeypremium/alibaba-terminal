@@ -112,49 +112,122 @@ test('Eski düzende Radyo (3×1) ve Hava (2×1) tek seferlik 1×1 olur; sonra el
   await ctx.close();
 });
 
-test('Üst çubuk Radyo çipi: hava çipinin soluna; çal/durdur, kanal değiştirme, ses; widget ile eşzamanlı', async () => {
-  const ctx = await newContext(browser, { mocks: [[/api\.open-meteo\.com\/v1\/forecast/, (r) => r.fulfill(json(forecast))]] });
-  await ctx.addInitScript(() => { HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('playing')), 20); return Promise.resolve(); }; });   // ağsız sahte oynatma
+const FAKE = "HTMLMediaElement.prototype.play = function () { this._p = 1; setTimeout(() => { if (this._p) this.dispatchEvent(new Event('playing')); }, 20); return Promise.resolve(); }; HTMLMediaElement.prototype.pause = function () { this._p = 0; };";   // ağsız sahte oynatma
+const WXM = [[/api\.open-meteo\.com\/v1\/forecast/, (r) => r.fulfill(json(forecast))]];
+
+test('Üst çubuk Radyo çipi: hava çipinin soluna, play düğmesi yok; tıklayınca panel açılır (kanallar, çal/durdur, ses); widget ile eşzamanlı', async () => {
+  const ctx = await newContext(browser, { mocks: WXM });
+  await ctx.addInitScript(FAKE);
   const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: LAYOUT });
   await page.waitForSelector('#sbRd');
   const pos = await page.evaluate(() => { const a = document.querySelector('#sbRd'), w = document.querySelector('#sbWx').getBoundingClientRect(), r = a.getBoundingClientRect(); return { next: a.nextElementSibling.id, right: r.right, wxLeft: w.left, dy: Math.abs(r.top + r.height / 2 - (w.top + w.height / 2)) }; });
   assert.equal(pos.next, 'sbWxBox');
   assert.ok(pos.right <= pos.wxLeft + 0.5 && pos.wxLeft - pos.right < 14, 'hava çipinin hemen solunda');
   assert.ok(pos.dy < 3, 'aynı hizada');
+  assert.equal(await page.locator('#sbRd button').count(), 0, 'çipte düğme yok (tek parça)');
   assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Radyo');
-  assert.equal(await page.getAttribute('#sbRd', 'data-state'), 'idle');
-  // sonraki kanal: çip ve widget aynı kanalı gösterir
-  await tap(page, '#sbRd .sb-rdn');
+  assert.equal(await page.locator('#radioPop').isVisible(), false);
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  const box = await page.$eval('#radioPop', (e) => { const r = e.getBoundingClientRect(); return [r.left, r.right, r.top, innerWidth]; });
+  assert.ok(box[0] >= 11 && box[1] <= box[3] - 11, 'panel ekran içinde ' + box);
+  assert.equal(await page.getAttribute('#sbRd', 'aria-expanded'), 'true');
+  assert.deepEqual(await page.$$eval('#radioPop .rp-it', (a) => a.map((x) => x.textContent.trim())), ['Habertürk', 'NTV', 'ODTÜ']);
+  assert.equal(await page.locator('#radioPop .rp-pl').count(), 1);
+  assert.equal(await page.locator('#radioPop .rp-vol input').count(), 1);
+  assert.equal(await page.locator('#radioPop .rp-eq i').count(), 5);
+  await tap(page, '#radioPop .rp-it[data-k=ht]');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
   assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Habertürk');
   assert.equal((await page.textContent('.w[data-id=radio] .rd-nm')).trim(), 'Habertürk');
-  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play', null, { timeout: 5000 });
-  assert.match(await page.textContent('.w[data-id=radio] .rd-st'), /CANLI/);
+  assert.match(await page.textContent('#radioPop .rp-st'), /CANLI/);
+  assert.equal(await page.$eval('#radioPop .rp-eq i', (e) => getComputedStyle(e).animationName), 'rdeq', 'panel ekolayzırı oynar');
   assert.equal(await page.$eval('#sbRd .rd-eq i', (e) => getComputedStyle(e).animationName), 'rdeq', 'çip ekolayzırı oynar');
-  // çal/durdur
-  await tap(page, '#sbRd .sb-rdb');
+  await tap(page, '#radioPop [data-a=nx]');
+  assert.equal((await page.textContent('#radioPop .rp-nm')).trim(), 'NTV Radyo');
+  await tap(page, '#radioPop [data-a=pv]');
+  assert.equal((await page.textContent('#radioPop .rp-nm')).trim(), 'Habertürk Radyo');
+  await tap(page, '#radioPop .rp-pl');
   await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'idle');
-  assert.match(await page.textContent('.w[data-id=radio] .rd-st'), /Durdu/);
-  await tap(page, '#sbRd .sb-rdb');
+  assert.match(await page.textContent('#radioPop .rp-st'), /Durdu/);
+  await tap(page, '#radioPop .rp-pl');
   await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
-  // ses: tekerlek; widget'taki çubuk da güncellenir
+  await page.$eval('#radioPop .rp-vol input', (e) => { e.value = 35; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pano.radio.vol'))), 0.35);
+  assert.equal(await page.$eval('.w[data-id=radio] .rd-vol input', (e) => e.value), '35');
+  assert.equal((await page.textContent('#radioPop .rp-vp')).trim(), '%35');
+  await tap(page, '#radioPop .rp-hd');
+  assert.equal(await page.locator('#radioPop').isVisible(), true);
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.querySelector('#radioPop').hidden);
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  await tap(page, 'body');
+  await page.waitForFunction(() => document.querySelector('#radioPop').hidden);
   const r = await page.$eval('#sbRd', (e) => { const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
   await page.mouse.move(r[0], r[1]);
   await page.mouse.wheel(0, 100);
-  await page.waitForFunction(() => /Ses %65/.test(document.querySelector('#sbRd .sb-rdn').textContent));
-  assert.equal(await page.$eval('.w[data-id=radio] .rd-vol input', (e) => e.value), '65');
-  await page.waitForFunction(() => document.querySelector('#sbRd .sb-rdn').textContent === 'Habertürk', null, { timeout: 4000 });
+  await page.waitForFunction(() => /Ses %30/.test(document.querySelector('#sbRd .sb-rdn').textContent));
   await ctx.close();
 });
 
-test('Radyo widget kapalıyken de üst çubuk çipi çalışır (motor widget\'tan bağımsız)', async () => {
+test('Radyo ve Hava panelleri birbirini kapatır', async () => {
+  const ctx = await newContext(browser, { mocks: WXM });
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: LAYOUT });
+  await page.waitForSelector('#sbRd');
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  await tap(page, '#sbWx');
+  await page.waitForSelector('#cityPop:not([hidden])');
+  assert.equal(await page.$eval('#radioPop', (e) => e.hidden), true);
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  assert.equal(await page.$eval('#cityPop', (e) => e.hidden), true);
+  await ctx.close();
+});
+
+test('Hava çipinin penceresi: konum + 7 günlük tahmin (üst çubuğun kendi hava isteğinden)', async () => {
+  const ctx = await newContext(browser, { mocks: WXM });
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: [{ id: 'controls', w: 1, h: 1, hidden: false }] });
+  await page.waitForSelector('#sbWx');
+  await page.waitForFunction(() => document.querySelector('#sbWx .sb-v'));   // hava isteği tamamlandı
+  await tap(page, '#sbWx');
+  await page.waitForSelector('#cityPop:not([hidden]) .pf-r');
+  assert.equal(await page.locator('#popFc .pf-r').count(), 7);
+  const rows = await page.$$eval('#popFc .pf-r', (a) => a.map((r) => [r.querySelector('b').textContent.trim(), r.querySelector('.pf-t').textContent.replace(/\s+/g, ' ').trim(), r.querySelector('.pf-pp').textContent.trim(), !!r.querySelector('.pf-ic svg')]));
+  assert.deepEqual(rows[0], ['Bugün', '20° 8°', '💧40%', true]);
+  assert.deepEqual(rows[6].slice(1), ['26° 14°', '💧40%', true]);
+  assert.equal(new Set(rows.map((r) => r[0])).size, 7, 'günler farklı');
+  assert.match(await page.textContent('#popName'), /Ankara/);
+  assert.equal(await page.locator('#cityIn').isVisible(), true, 'konum değiştirme alanı duruyor');
+  const b = await page.$eval('#cityPop', (e) => { const r = e.getBoundingClientRect(); return [r.left, r.right, r.bottom, innerWidth, innerHeight]; });
+  assert.ok(b[0] >= 0 && b[1] <= b[3] && b[2] <= b[4], 'pencere ekranda ' + b);
+  assert.equal(await page.evaluate(() => Object.keys(bkCollect(true)).some((k) => k === 'pano.tk.d')), false, 'önbellek yedeğe girmez');
+  await ctx.close();
+});
+
+test('Hava çipinin penceresi: ağ yokken son kayıt (önbellek) gösterilir', async () => {
   const ctx = await newContext(browser);
-  await ctx.addInitScript(() => { HTMLMediaElement.prototype.play = function () { setTimeout(() => this.dispatchEvent(new Event('playing')), 20); return Promise.resolve(); }; });   // ağsız sahte oynatma
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1, 'pano.tk.d': { p: 'Ankara', days: Array.from({ length: 7 }, (_, i) => ({ t: days[i], c: 3, hi: 10 + i, lo: 2 + i, pp: 0 })) } }, layout: [{ id: 'controls', w: 1, h: 1, hidden: false }] });
+  await page.waitForSelector('#sbWx');
+  await tap(page, '#sbWx');
+  await page.waitForSelector('#cityPop:not([hidden]) .pf-r');
+  assert.equal(await page.locator('#popFc .pf-r').count(), 7);
+  assert.equal((await page.textContent('#popFc .pf-r .pf-t')).replace(/\s+/g, ' ').trim(), '10° 2°');
+  await ctx.close();
+});
+
+test('Radyo widget kapalıyken de üst çubuk çipi ve paneli çalışır (motor widget\'tan bağımsız)', async () => {
+  const ctx = await newContext(browser);
+  await ctx.addInitScript(FAKE);
   const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: [{ id: 'controls', w: 1, h: 1, hidden: false }, { id: 'radio', w: 1, h: 1, hidden: true }] });
   await page.waitForSelector('#sbRd');
   assert.equal(await page.locator('.w[data-id=radio]').evaluate((e) => e.getBoundingClientRect().width).catch(() => 0), 0, 'widget ekranda yok');
-  await tap(page, '#sbRd .sb-rdn');
-  assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Habertürk');
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  await tap(page, '#radioPop .rp-it[data-k=ht]');
   await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
+  assert.equal((await page.textContent('#sbRd .sb-rdn')).trim(), 'Habertürk');
   await ctx.close();
 });
 

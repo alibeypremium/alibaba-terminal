@@ -69,6 +69,18 @@ h1{margin:4px 0 0;font-size:clamp(30px,5.4vw,46px);font-weight:700;letter-spacin
 .sb-ic.wx{overflow:visible;box-shadow:none;width:22px;height:22px}
 .sb{position:relative;z-index:40}
 .sb .pop{right:8px;top:calc(100% + 8px);background:var(--pop)}
+.pop-fc{display:flex;flex-direction:column;gap:1px;padding-bottom:10px;border-bottom:1px solid var(--hairline)}
+.pf-wait{font-size:12.5px;color:var(--fg2);padding:6px 0}
+.pf-r{display:grid;grid-template-columns:42px 26px 40px 1fr 62px;gap:8px;align-items:center;padding:3px 0;font-size:13px}
+.pf-r>b{font-weight:600}
+.pf-r.now>b{color:#0a84ff}
+.pf-ic{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(160deg,#4a8fe8,#2a5fb8)}
+.pf-ic svg{width:21px;height:21px;display:block}
+.pf-pp{font-size:11px;color:var(--fg2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pf-bar{height:4px;border-radius:2px;background:rgba(127,127,140,.28);position:relative;overflow:hidden}
+.pf-bar i{position:absolute;top:0;bottom:0;border-radius:2px;background:linear-gradient(90deg,#7fd1ff,#ffb84d)}
+.pf-t{text-align:right;font-variant-numeric:tabular-nums;color:var(--fg2)}
+.pf-t b{color:var(--fg);font-weight:700}
 .pop-cur{display:flex;flex-direction:column;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--hairline)}
 .pop-k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
 .pop-cur b{font-size:18px;letter-spacing:-.01em}

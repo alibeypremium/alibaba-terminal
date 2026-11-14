@@ -40,11 +40,12 @@ tick();setInterval(tick,1000);
 const pop=$('#cityPop'),cin=$('#cityIn'),cmsg=$('#cityMsg');
 const fillPop=()=>{
   $('#popName').textContent=place.name;
+  paintFc();
   $('#popCoord').textContent=Math.abs(place.lat).toFixed(2)+'° '+(place.lat>=0?'Kuzey':'Güney')+'  ·  '+Math.abs(place.lon).toFixed(2)+'° '+(place.lon>=0?'Doğu':'Batı');
 };
 $('#sbR').addEventListener('click',e=>{
   if(!e.target.closest('#sbWx'))return;
-  e.stopPropagation();pop.hidden=!pop.hidden;
+  e.stopPropagation();if(typeof rpClose==='function')rpClose();pop.hidden=!pop.hidden;
   if(!pop.hidden){fillPop();cmsg.textContent='';cin.value='';cin.focus()}
 });
 pop.addEventListener('click',e=>e.stopPropagation());

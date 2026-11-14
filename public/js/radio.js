@@ -88,6 +88,8 @@ const RADIO=(()=>{
 })();
 
 const RD_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',RD_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+const rdLg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+(c.fit?';background:#c8102e':'')+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="inset:auto;left:-5%;top:-3%;width:127%;height:106%;object-fit:fill"':'')+'>':'')+'</span>';   /* kanal rozeti: altta baş harf, üstte logo (yüklenmezse kaldırılır) */
+const rdStatus=(cur,state,br)=>({idle:cur?'Durdu':'Hazır',load:'<span class="rd-spin" aria-hidden="true"></span>Bağlanıyor…',play:'<span class="rd-badge"><i></i>CANLI</span>'+(br?'<span class="rd-br">'+br+' kbps</span>':''),err:'Bu yayın açılmadı',na:'Yayın adresi bulunamadı'})[state];
 const RD_EQ='<span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
 
 /* ---------- Radyo widget'ı ---------- */
@@ -99,9 +101,8 @@ function mountRadio(w,root){
     '<div class="rd-vol" title="Ses (fare tekerleği de çalışır)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"></div>'+'</div></div>';
   const $r=s=>$(s,root),disc=$r('.rd-disc'),nm=$r('.rd-nm'),stt=$r('.rd-st'),pl=$r('.rd-pl'),lst=$r('.rd-list'),rng=$r('.rd-vol input'),box=$r('.rd');
   let flashT=0,flashUntil=0;
-  /* Kanal rozeti: altta baş harf, üstte logo (logo yüklenmezse kaldırılır, baş harf kalır) */
   const dot=c=>'<i class="rd-dot" style="--c:'+c.c+'"></i>';   /* kanal düğmelerinde renkli nokta; logo yalnızca plakta */
-  const lg=(c,big)=>'<span class="rd-lg" style="--c:'+c.c+(c.fit?';background:#c8102e':'')+'">'+esc(big?(c.mono||c.name.slice(0,1)):c.name.slice(0,1))+(c.logo?'<img src="'+esc(c.logo)+'" alt="" referrerpolicy="no-referrer"'+(c.fit?' style="inset:auto;left:-5%;top:-3%;width:127%;height:106%;object-fit:fill"':'')+'>':'')+'</span>';
+  const lg=rdLg;
   root.addEventListener('error',e=>{if(e.target.tagName==='IMG')e.target.remove()},true);
   lst.innerHTML=CH.map(c=>'<button type="button" class="rd-it" data-k="'+c.k+'" title="'+esc(c.name)+'">'+dot(c)+'<span class="rd-n">'+esc(c.name)+'</span></button>').join('');
   let lastK=null;
@@ -109,8 +110,7 @@ function mountRadio(w,root){
     const cur=RADIO.cur,state=RADIO.state,br=RADIO.br();
     nm.textContent=cur?cur.name:'Bir kanal seç';
     if(Date.now()>=flashUntil){
-      const T={idle:cur?'Durdu':'Hazır',load:'<span class="rd-spin" aria-hidden="true"></span>Bağlanıyor…',play:'<span class="rd-badge"><i></i>CANLI</span>'+(br?'<span class="rd-br">'+br+' kbps</span>':''),err:'Bu yayın açılmadı',na:'Yayın adresi bulunamadı'};
-      stt.innerHTML=T[state];stt.className='rd-st '+(state==='err'||state==='na'?'err':'');
+      stt.innerHTML=rdStatus(cur,state,br);stt.className='rd-st '+(state==='err'||state==='na'?'err':'');
     }
     const k=cur?cur.k:'';if(k!==lastK){lastK=k;disc.innerHTML=cur?lg(cur,true):'<span class="rd-lg rd-lg0">♪</span>'}
     pl.innerHTML=state==='play'||state==='load'?RD_PAUSE:RD_PLAY;
@@ -134,26 +134,69 @@ function mountRadio(w,root){
   paint();
 }
 
-/* ---------- Üst çubuktaki Radyo çipi (#sbRd, topbar.js yazar; olaylar belge düzeyinde dinlenir) ---------- */
+/* ---------- Üst çubuktaki Radyo çipi (#sbRd) ve tıklayınca açılan küçük panel (#radioPop) ----------
+   Çip topbar.js tarafından yazılır; burada yalnızca boyanır, olaylar belge düzeyinde dinlenir. Panel: kanallar, çal/durdur, ses. */
 function radioChipPaint(){
   const el=document.getElementById('sbRd');if(!el)return;
-  const cur=RADIO.cur,st=RADIO.state,on=st==='play'||st==='load';
+  const cur=RADIO.cur,st=RADIO.state;
   el.dataset.state=st;
-  const nm=el.querySelector('.sb-rdn'),bt=el.querySelector('.sb-rdb');
+  const nm=el.querySelector('.sb-rdn');
   if(!(Date.now()<radioChipPaint.flash)){const t=cur?cur.name:'Radyo';if(nm.textContent!==t)nm.textContent=t}
-  const ic=on?RD_PAUSE:RD_PLAY;if(bt._i!==ic){bt._i=ic;bt.innerHTML=ic}
-  bt.setAttribute('aria-label',on?'Radyoyu durdur':'Radyoyu çal');
-  el.title='Radyo'+(cur?': '+cur.name:'')+' · '+({idle:'durdu',load:'bağlanıyor',play:'canlı',err:'yayın açılmadı',na:'yayın yok'})[st]+'\nAdın üstüne tıkla: sonraki kanal · Fare tekerleği: ses (%'+Math.round(RADIO.vol*100)+')';
+  el.setAttribute('aria-label','Radyo: '+(cur?cur.name+', ':'')+({idle:'durdu',load:'bağlanıyor',play:'canlı',err:'yayın açılmadı',na:'yayın yok'})[st]+'. Paneli aç');
+  el.title='Radyo'+(cur?': '+cur.name:'')+'\nFare tekerleği: ses (%'+Math.round(RADIO.vol*100)+')';
+}
+const rpEl=()=>document.getElementById('radioPop');
+let rpOff=null;
+function rpPaint(){
+  const pop=rpEl();if(!pop||pop.hidden)return;
+  const cur=RADIO.cur,st=RADIO.state,on=st==='play'||st==='load',q=s=>pop.querySelector(s);
+  q('.rp-nm').textContent=cur?cur.name+' Radyo':'Bir kanal seç';
+  q('.rp-st').innerHTML=rdStatus(cur,st,RADIO.br());q('.rp-st').className='rp-st'+(st==='err'||st==='na'?' err':'');
+  const k=cur?cur.k:'';const d=q('.rp-disc');if(d._k!==k){d._k=k;d.innerHTML=cur?rdLg(cur,true):'<span class="rd-lg rd-lg0">♪</span>'}
+  q('.rp-pl').innerHTML=on?RD_PAUSE:RD_PLAY;q('.rp-pl').setAttribute('aria-label',on?'Durdur':'Çal');
+  pop.classList.toggle('live',st==='play');
+  const r=q('.rp-vol input');if(document.activeElement!==r)r.value=Math.round(RADIO.vol*100);
+  q('.rp-vp').textContent='%'+Math.round(RADIO.vol*100);
+  pop.querySelectorAll('.rp-it').forEach(b=>{const x=!!cur&&b.dataset.k===cur.k;b.classList.toggle('on',x);b.setAttribute('aria-pressed',x?'true':'false')});
+}
+function rpClose(){
+  const pop=rpEl();if(!pop||pop.hidden)return;
+  pop.hidden=true;if(rpOff){rpOff();rpOff=null}
+  const c=document.getElementById('sbRd');if(c)c.setAttribute('aria-expanded','false');
+}
+function rpOpen(){
+  const pop=rpEl(),chip=document.getElementById('sbRd');if(!pop||!chip)return;
+  const cp=document.getElementById('cityPop');if(cp)cp.hidden=true;
+  if(!pop.firstChild)pop.innerHTML='<div class="rp-hd"><div class="rp-disc rd-disc" aria-hidden="true"></div><div class="rp-inf"><b class="rp-nm"></b><span class="rp-sl"><span class="rd-eq rp-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="rp-st"></span></span></div></div>'+
+    '<div class="rp-tr"><button type="button" class="rp-sk" data-a="pv" aria-label="Önceki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button><button type="button" class="rp-pl" data-a="pl"></button><button type="button" class="rp-sk" data-a="nx" aria-label="Sonraki kanal"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button></div>'+
+    '<div class="rp-vol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 9a4 4 0 0 1 0 6"/></svg><input type="range" min="0" max="100" aria-label="Ses"><span class="rp-vp"></span></div>'+
+    '<div class="rp-list">'+RADIO.ch.map(c=>'<button type="button" class="rp-it" data-k="'+c.k+'"><i class="rd-dot" style="--c:'+c.c+'"></i>'+esc(c.name)+'</button>').join('')+'</div>';
+  pop.hidden=false;rpPaint();rpOff=RADIO.on(rpPaint);
+  chip.setAttribute('aria-expanded','true');
+  /* paneli çipin altına hizala, ekrandan taşırma */
+  const sb=pop.offsetParent?pop.offsetParent.getBoundingClientRect():{left:0},c=chip.getBoundingClientRect(),w=pop.offsetWidth;
+  const abs=Math.max(12,Math.min(c.left,innerWidth-12-w));
+  pop.style.right='auto';pop.style.left=(abs-sb.left)+'px';
 }
 RADIO.on(radioChipPaint);
 document.addEventListener('click',e=>{
-  const c=e.target.closest&&e.target.closest('#sbRd');if(!c)return;
-  if(e.target.closest('.sb-rdb'))RADIO.toggle();else if(e.target.closest('.sb-rdn'))RADIO.step(1);
+  const t=e.target,pop=rpEl();
+  if(t.closest&&t.closest('#sbRd')){e.stopPropagation();pop&&pop.hidden?rpOpen():rpClose();return}
+  if(pop&&!pop.hidden){
+    if(!(t.closest&&t.closest('#radioPop'))){rpClose();return}
+    const a=t.closest('[data-a]'),it=t.closest('.rp-it');
+    if(a){const k=a.dataset.a;if(k==='pl')RADIO.toggle();else RADIO.step(k==='nx'?1:-1)}
+    else if(it)RADIO.play(RADIO.ch.find(c=>c.k===it.dataset.k));
+  }
 });
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('sb-rdn')){e.preventDefault();RADIO.step(1)}});
+document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches('#radioPop .rp-vol input'))RADIO.setVol(e.target.value/100)});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){const p=rpEl();if(p&&!p.hidden){rpClose();const c=document.getElementById('sbRd');c&&c.focus()}}
+  else if((e.key==='Enter'||e.key===' ')&&e.target.id==='sbRd'){e.preventDefault();e.target.click()}
+});
 document.addEventListener('wheel',e=>{
-  const c=e.target.closest&&e.target.closest('#sbRd');if(!c)return;
+  const c=e.target.closest&&(e.target.closest('#sbRd')||e.target.closest('#radioPop'));if(!c)return;
   e.preventDefault();RADIO.setVol(RADIO.vol-Math.sign(e.deltaY)*.05);
-  radioChipPaint.flash=Date.now()+1200;c.querySelector('.sb-rdn').textContent='Ses %'+Math.round(RADIO.vol*100);
-  clearTimeout(radioChipPaint.t);radioChipPaint.t=setTimeout(()=>{radioChipPaint.flash=0;radioChipPaint()},1250);
+  if(c.id==='sbRd'){radioChipPaint.flash=Date.now()+1200;c.querySelector('.sb-rdn').textContent='Ses %'+Math.round(RADIO.vol*100);
+    clearTimeout(radioChipPaint.t);radioChipPaint.t=setTimeout(()=>{radioChipPaint.flash=0;radioChipPaint()},1250)}
 },{passive:false});

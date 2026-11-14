@@ -30,6 +30,19 @@ function moonInfo(d=new Date()){
   const svg='<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.6" fill="rgba(140,150,170,.35)"/><path d="M8 2A6 6 0 0 '+s1+' 8 14A'+rx+' 6 0 0 '+s2+' 8 2z" fill="#f4ecc2"/></svg>';
   return{name,pct:Math.round((1-k)/2*100),svg};
 }
+/* Hava çipinin açılır panelindeki 7 günlük tahmin: veri üst çubuğun hava isteğiyle gelir, son değer önbellekten hemen gösterilir. */
+let WXFC=LS.get('pano.tk.d',null);
+function paintFc(){
+  const el=document.getElementById('popFc');if(!el)return;
+  const f=WXFC&&WXFC.p===place.name?WXFC.days:null;
+  if(!f||!f.length){const h='<span class="pf-wait">Tahmin yükleniyor…</span>';if(el._h!==h){el._h=h;el.innerHTML=h}return}
+  const lo=Math.min(...f.map(x=>x.lo)),hi=Math.max(...f.map(x=>x.hi)),span=Math.max(1,hi-lo);
+  const h='<span class="pop-k">7 günlük tahmin</span>'+f.map((x,i)=>{
+    const nm=i?new Date(x.t+'T12:00').toLocaleDateString('tr-TR',{weekday:'short'}):'Bugün',desc=(WX[x.c]||['—'])[0];
+    return'<div class="pf-r'+(i===0?' now':'')+'" title="'+esc(desc)+'"><b>'+esc(nm)+'</b><span class="pf-ic">'+wxIcon(x.c,1)+'</span><span class="pf-pp">'+(x.pp>=10?'💧'+Math.round(x.pp)+'%':'')+'</span><span class="pf-bar"><i style="left:'+((x.lo-lo)/span*100)+'%;right:'+(100-(x.hi-lo)/span*100)+'%"></i></span><span class="pf-t"><b>'+Math.round(x.hi)+'°</b> '+Math.round(x.lo)+'°</span></div>';
+  }).join('');
+  if(el._h!==h){el._h=h;el.innerHTML=h}
+}
 function paintRight(){
   const nm=esc(place.name.split(',')[0]);
   let r='<button type="button" class="sb-chip sb-btn" id="sbWx" aria-haspopup="dialog" aria-label="Konum: '+nm+'. Değiştirmek için tıkla">'+
@@ -38,7 +51,7 @@ function paintRight(){
   /* Hava çipi ve ms çipi ayrı, kalıcı öğelerdir: ms çipi yeniden oluşturulmaz, açılan kutu ekranda kalır. */
   const box=$('#sbR');
   let wxBox=$('#sbWxBox',box),ms=$('#sbMs',box);
-  if(!wxBox){box.innerHTML='<span class="sb-chip sb-rd" id="sbRd" data-state="idle"><button type="button" class="sb-rdb" aria-label="Radyoyu çal"></button><span class="sb-rdn" role="button" tabindex="0">Radyo</span><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></span><span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-ms" id="sbMs" role="button" tabindex="0" data-state="run" aria-describedby="sbTip" aria-label="Sistem durumu ve yanıt süresi. Ayrıntıları aç">'+BOLT.replace('%C%','')+'<b></b><span class="sb-v">ms</span><span class="sb-tip" id="sbTip" role="tooltip"><div></div></span></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
+  if(!wxBox){box.innerHTML='<span class="sb-chip sb-rd" id="sbRd" data-state="idle" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false"><span class="rd-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="sb-rdn">Radyo</span></span><span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-ms" id="sbMs" role="button" tabindex="0" data-state="run" aria-describedby="sbTip" aria-label="Sistem durumu ve yanıt süresi. Ayrıntıları aç">'+BOLT.replace('%C%','')+'<b></b><span class="sb-v">ms</span><span class="sb-tip" id="sbTip" role="tooltip"><div></div></span></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
   if(r!==lastRight){lastRight=r;wxBox.innerHTML=r}
   const m=TK.ms?TK.ms.ms:undefined,ok=typeof m==='number',c=!ok?(m===null?' err':''):m<200?'':m<500?' warn':' err';
   const bv=$('b',ms),vt=ok?String(m):'—';if(bv.textContent!==vt)bv.textContent=vt;
@@ -75,7 +88,7 @@ function startTicker(){
     ws.onclose=down;ws.onerror=down;
   };
   const reWS=()=>{if(ws){try{ws.onclose=null;ws.onerror=null;ws.close()}catch{}ws=null}openWS()};
-  const wx=async()=>{try{const j=await getJSON('https://api.open-meteo.com/v1/forecast?latitude='+place.lat+'&longitude='+place.lon+'&current=temperature_2m,weather_code,is_day&timezone=auto');setTk('wx',{svg:wxIcon(j.current.weather_code,j.current.is_day),place:place.name.split(',')[0],t:Math.round(j.current.temperature_2m)})}catch{}};
+  const wx=async()=>{try{const j=await getJSON('https://api.open-meteo.com/v1/forecast?latitude='+place.lat+'&longitude='+place.lon+'&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');if(j.daily&&j.daily.time){const d=j.daily;WXFC={p:place.name,days:d.time.slice(0,7).map((t,i)=>({t,c:d.weather_code[i],hi:d.temperature_2m_max[i],lo:d.temperature_2m_min[i],pp:d.precipitation_probability_max&&d.precipitation_probability_max[i]}))};LS.set('pano.tk.d',WXFC);paintFc()}setTk('wx',{svg:wxIcon(j.current.weather_code,j.current.is_day),place:place.name.split(',')[0],t:Math.round(j.current.temperature_2m)})}catch{}};
   /* Gecikme: küçük bir ping isteği, anında sonuç verir. İlk ölçüm bağlantı kurulumunu da içerir, ikincisi gerçek değeri gösterir. */
   const ping=async()=>{
     /* Tek bir sunucuya bağlı kalmasın (Binance bazı ağlarda engelli): küçük, hızlı yanıt veren birkaç adresten

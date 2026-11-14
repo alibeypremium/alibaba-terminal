@@ -2,7 +2,7 @@
 /* AliBaba Terminal · backup.js — klasik betik (modül değil): tüm js/*.js dosyaları index.html'deki sırayla yüklenir ve aynı genel kapsamı paylaşır. */
 /* ---------- Yedekle ve aktar: ayarlar tarayıcıda (localStorage) durduğu için başka cihaza ya da adrese taşımak için dosyaya yazılır ---------- */
 const BK_OK=/^pano\.[\w.-]{1,80}$/;
-const BK_SKIP=/^pano\.(kurul\.c$|sys\.|news\.(c\.|strip$)|tech\.c\.|tg\.(c|ts|t)$|rd\.(c|ai)$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
+const BK_SKIP=/^pano\.(tk\.d$|kurul\.c$|sys\.|news\.(c\.|strip$)|tech\.c\.|tg\.(c|ts|t)$|rd\.(c|ai)$|radio\.ch3$|tk$|wx$|prayer$|steam\.f$|fb\.|x\.)/;   /* önbellekler: yeniden indirilir, yedeğe girmez */
 function bkCollect(withKeys){
   const o={};
   try{for(let i=0;i<localStorage.length;i++){
