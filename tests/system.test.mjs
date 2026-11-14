@@ -18,7 +18,7 @@ async function open(over, { ls, three = true, mocks = [] } = {}) {
   const ctx = await newContext(browser, { mocks: [...sysMocks(over), ...mocks] });
   const { page, errors } = await openPage(ctx, srv.url, { layout: [{ id: 'sys', w: 1, h: 1, hidden: false }], ls });
   await page.waitForFunction((s) => document.querySelector(s + ' .sy-w')?.dataset.state !== 'run' && !/yenileniyor/.test(document.querySelector(s + ' .sy-sub').textContent), W, { timeout: 40000 });
-  if (three) { await page.evaluate(() => { window.THREE = {}; }); await tap(page, W + ' [data-a=re]'); }
+  if (three) { await page.evaluate(() => { window.THREE = {}; bus.dispatchEvent(new Event('refresh')); }); }
   await settle(page);
   return { ctx, page, errors };
 }
@@ -44,8 +44,9 @@ test('Sistem Durumu: varsayılan düzende kapalı; açılınca 1×1 boyutunda', 
 test('Sistem Durumu: her şey sağlıklıyken "Tüm sistemler çalışıyor", sorun yok', async () => {
   const { ctx, page, errors } = await open({});
   assert.equal(await page.getAttribute(W + ' .sy-w', 'data-state'), 'ok');
-  assert.equal((await page.textContent(W + ' .sy-hl')).trim(), 'Tüm sistemler çalışıyor');
-  assert.match(await page.textContent(W + ' .sy-sub'), /^\d+\/\d+ kontrol/);
+  assert.equal((await page.textContent(W + ' .sy-hl')).trim(), 'Çalışıyor');
+  assert.match(await page.textContent(W + ' .sy-sub'), /^son kontrol \d\d:\d\d/);
+  assert.match(await page.textContent(W + ' .sy-num'), /^\d+\/\d+ hizmet$/);
   assert.deepEqual(await page.$$eval(W + ' .sy-bars i', (a) => a.map((x) => x.dataset.s).filter((v) => v !== 'ok' && v !== 'off')), [], 'çubuklarda sorun yok');
   assert.ok((await page.locator(W + ' .sy-bars i').count()) >= 6);
   const rows = await popup(page);
@@ -66,7 +67,7 @@ test('Sistem Durumu: çalışmayan hizmet kartta adıyla görünür; ayrıntıda
     'raw-ps': (r) => r.fulfill(json({ t: new Date(Date.now() - 20 * 36e5).toISOString(), deals: [{}] })),
   });
   assert.equal(await page.getAttribute(W + ' .sy-w', 'data-state'), 'bad');
-  assert.match(await page.textContent(W + ' .sy-hl'), /^4 hizmet çalışmıyor$/);
+  assert.match(await page.textContent(W + ' .sy-hl'), /^Kesinti var$/);
   assert.equal((await page.textContent(W + ' .sy-sub')).trim(), 'Telegram veri çekimi +3', 'ilk sorun + kalan sayısı');
   const tip = await page.getAttribute(W + ' .sy-card', 'title');
   assert.equal(tip.split('\n').length, 4);
@@ -117,36 +118,39 @@ test('Sistem Durumu: vekil istekleri Cache-Control/Pragma taşımaz (gerçek vek
 });
 
 test('Sistem Durumu: yalnızca uyarı varsa "dikkat istiyor"; vekillerden biri düşünce hangisi olduğu yazılır', async () => {
-  const { ctx, page } = await open({ proxy: (r) => /corsproxy\.io/.test(r.request().url()) ? r.abort() : r.fulfill({ status: 200, contentType: 'text/plain', headers: CORS_, body: 'x'.repeat(300) }) });
+  const { ctx, page } = await open({ proxy: (r) => !/cors\.lol/.test(r.request().url()) ? r.abort() : r.fulfill({ status: 200, contentType: 'text/plain', headers: CORS_, body: 'x'.repeat(300) }) });
   assert.equal(await page.getAttribute(W + ' .sy-w', 'data-state'), 'warn');
-  assert.equal((await page.textContent(W + ' .sy-hl')).trim(), '1 hizmette uyarı');
+  assert.equal((await page.textContent(W + ' .sy-hl')).trim(), 'Uyarı var');
   const rows = await popup(page), px = rows.find((r) => r.n === 'CORS vekilleri');
   assert.equal(px.s, 'warn');
-  assert.match(px.v, /5\/6 çalışıyor · yok: corsproxy\.io/);
+  assert.match(px.v, /1\/6 çalışıyor · yok: .*corsproxy\.io/);
   await ctx.close();
 });
 
-test('Sistem Durumu: GitHub API sınırına takılınca önbellekteki sonuç (önbellek) ile gösterilir, yoksa uyarı verir', async () => {
-  const limit = (r) => r.fulfill({ status: 403, headers: CORS_, contentType: 'application/json', body: '{"message":"rate limit"}' });
-  const cached = { t: Date.now() - 20 * 60e3, j: { runs: [{ s: 'completed', c: 'success', t: Date.now() - 50 * 60e3 }] } };
-  const a = await open({ 'gh-pages': limit }, { ls: { 'pano.sys.gh.pages.yml': cached } });
+test('Sistem Durumu: iş akışı durumu veri dalındaki dosyadan okunur (GitHub API çağrılmaz); dosya yoksa/bayatsa uyarı', async () => {
+  const api = [];
+  const a = await open({}, { mocks: [[/^https:\/\/api\.github\.com/, (r) => { api.push(r.request().url()); return r.abort(); }]] });
   let rows = await popup(a.page);
-  assert.match(rows.find((r) => r.n === 'Site yayını (Pages)').v, /başarılı · 50 dk önce \(önbellek\)/);
-  assert.equal(rows.find((r) => r.n === 'Site yayını (Pages)').s, 'warn');
+  assert.deepEqual(api, [], 'GitHub API kullanılmamalı');
+  assert.equal(rows.find((r) => r.n === 'Site yayını (Pages)').s, 'ok');
+  assert.match(rows.find((r) => r.n === 'Site yayını (Pages)').v, /başarılı · 30 dk önce/);
   await a.ctx.close();
-  const b = await open({ 'gh-pages': limit });
+  const b = await open({ durum: null });
   rows = await popup(b.page);
-  const r = rows.find((x) => x.n === 'Site yayını (Pages)');
-  assert.equal(r.s, 'warn');
-  assert.match(r.v, /istek sınırına takıldı/);
+  assert.equal(rows.find((x) => x.n === 'Site yayını (Pages)').s, 'warn');
+  assert.match(rows.find((x) => x.n === 'Site yayını (Pages)').v, /durum dosyas/);
   await b.ctx.close();
+  const c = await open({ durumT: Date.now() - 5 * 36e5 });
+  rows = await popup(c.page);
+  assert.match(rows.find((x) => x.n === 'Otomatik testler').v, /5 sa önce güncellendi/);
+  await c.ctx.close();
 });
 
 test('Sistem Durumu: çevrimdışıyken internet kırmızı, diğerleri denenmez', async () => {
   const { ctx, page } = await open({});
   await ctx.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
-  await page.waitForFunction((s) => /çalışmıyor/.test(document.querySelector(s + ' .sy-hl').textContent), W);
+  await page.waitForFunction((s) => /Kesinti/.test(document.querySelector(s + ' .sy-hl').textContent), W);
   let rows = await popup(page);
   assert.equal(rows.find((r) => r.n === 'İnternet bağlantısı').s, 'bad');
   for (let i = 0; i < 40 && !/çevrimdışı/.test(rows.find((r) => r.n === 'Hava durumu (Open-Meteo)').v); i++) { await page.waitForTimeout(250); rows = await rowsOf(page); }   /* uçuştaki istekler bitince yeniden denenir */
@@ -158,8 +162,8 @@ test('Sistem Durumu: betik hatası yakalanır ve gösterilir', async () => {
   const { ctx, page } = await open({});
   await page.evaluate(() => { setTimeout(() => { throw new Error('deneme hatası'); }); });
   await page.waitForFunction(() => ERRS.length === 1);
-  await tap(page, W + ' [data-a=re]');
-  await page.waitForFunction((s) => /çalışmıyor/.test(document.querySelector(s + ' .sy-hl').textContent), W);
+  await page.evaluate(() => bus.dispatchEvent(new Event('refresh')));
+  await page.waitForFunction((s) => /Kesinti/.test(document.querySelector(s + ' .sy-hl').textContent), W);
   const rows = await popup(page), r = rows.find((x) => x.n === 'Betik hataları (bu oturum)');
   assert.equal(r.s, 'bad');
   assert.match(r.v, /1 hata · son: Uncaught Error: deneme hatası/);
@@ -171,7 +175,7 @@ test('Sistem Durumu: yeni sürüm yayındaysa uyarır, aynıysa güncel der', as
   for (const [served, want, sev] of [['bbbb2222cccc', /yeni sürüm yayında/, 'warn'], ['aaaa1111dddd', /güncel/, 'ok']]) {
     const { ctx, page } = await open({}, { three: true, mocks: [[/127\.0\.0\.1:\d+\/index\.html\?_=\d+/, (r) => r.fulfill(html(served))]] });
     await page.evaluate(() => { document.querySelector('script[src*="js/core.js"]').setAttribute('src', 'js/core.js?v=aaaa1111dddd'); });
-    await tap(page, W + ' [data-a=re]');
+    await page.evaluate(() => bus.dispatchEvent(new Event('refresh')));
     await settle(page);
     const rows = await popup(page), r = rows.find((x) => x.n === 'Site sürümü');
     assert.equal(r.s, sev); assert.match(r.v, want);
@@ -179,17 +183,16 @@ test('Sistem Durumu: yeni sürüm yayındaysa uyarır, aynıysa güncel der', as
   }
 });
 
-test('Sistem Durumu: widget\'ların kendi canlı durumu (başarısız çekim) listelenir; önbellekler yedeğe girmez', async () => {
+test('Sistem Durumu: widget\'ların kendi canlı durumu (başarısız çekim) listelenir; sistem önbelleği yedeğe girmez', async () => {
   const ctx = await newContext(browser, { mocks: sysMocks() });
   const { page } = await openPage(ctx, srv.url, { layout: LAYOUT });
   await page.waitForFunction(() => typeof status === 'function');
   await page.evaluate(() => { status('wx', true); status('fx', false); });
-  await page.waitForFunction((s) => /çalışmıyor/.test(document.querySelector(s + ' .sy-hl').textContent), W, { timeout: 30000 });
+  await page.waitForFunction((s) => /Kesinti/.test(document.querySelector(s + ' .sy-hl').textContent), W, { timeout: 30000 });
   const rows = await popup(page);
   assert.equal(rows.find((r) => r.n === 'Hava').s, 'ok');
   assert.equal(rows.find((r) => r.n === 'Döviz').s, 'bad');
   assert.match(rows.find((r) => r.n === 'Döviz').v, /son çekim başarısız/);
   assert.equal(await page.evaluate(() => Object.keys(bkCollect(true)).some((k) => /^pano\.sys\./.test(k))), false);
-  assert.equal(await page.evaluate(() => Object.keys(localStorage).some((k) => /^pano\.sys\.gh\./.test(k))), true);
   await ctx.close();
 });

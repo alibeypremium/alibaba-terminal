@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: tg
   cancel-in-progress: true
@@ -18,6 +19,20 @@ jobs:
           node-version: 20
       - run: npm install --no-save --no-package-lock cheerio@1.0.0
       - run: node .github/scripts/tg.mjs out/tg.json
+      - name: iş akışı durumu (Sistem Durumu widget'ı için)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p out
+          : > out/wf.tmp
+          for wf in pages test tg ps kurul; do
+            r=$(gh api "repos/${{ github.repository }}/actions/workflows/$wf.yml/runs?per_page=4" --jq '[.workflow_runs[]|{s:.status,c:.conclusion,t:.updated_at}]' 2>/dev/null || echo '[]')
+            printf '%s\t%s\n' "$wf" "$r" >> out/wf.tmp
+          done
+          jq -Rn --argjson t "$(date +%s000)" '{t:$t, wf:([inputs|split("\t")|{key:.[0],value:(.[1]|fromjson)}]|from_entries)}' < out/wf.tmp > out/durum.json
+          rm out/wf.tmp
+          cat out/durum.json | head -c 400
       - name: veri dalına yaz (site yeniden build olmaz)
         run: |
           cd out
@@ -25,5 +40,6 @@ jobs:
           git config user.name "tg-bot"
           git config user.email "tg-bot@users.noreply.github.com"
           git add tg.json
+          [ -f durum.json ] && git add durum.json || true
           git commit -q -m "tg $(date -u +%FT%TZ)"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" veri

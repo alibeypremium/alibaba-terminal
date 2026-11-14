@@ -32,8 +32,17 @@ export function sysMocks(over = {}) {
   const m = { ...base, ...over };
   const h = (key, re) => [re, (r) => (m[key] === null ? r.abort() : m[key](r))];
   return [
-    h('gh-pages', /^https:\/\/api\.github\.com\/.*\/workflows\/pages\.yml\//), h('gh-test', /^https:\/\/api\.github\.com\/.*\/workflows\/test\.yml\//),
-    h('gh-tg', /^https:\/\/api\.github\.com\/.*\/workflows\/tg\.yml\//), h('gh-ps', /^https:\/\/api\.github\.com\/.*\/workflows\/ps\.yml\//), h('gh-kurul', /^https:\/\/api\.github\.com\/.*\/workflows\/kurul\.yml\//),
+    [/^https:\/\/raw\.githubusercontent\.com\/.*\/veri\/durum\.json/, async (r) => {
+      if (m.durum === null) return r.abort();
+      if (m.durum) return m.durum(r);
+      const wf = {};
+      for (const f of ['pages', 'test', 'tg', 'ps', 'kurul']) {
+        const hnd = m['gh-' + f]; if (hnd === null) continue;
+        let body; await hnd({ fulfill: (o) => { body = o.body; }, abort: () => {} });
+        if (body) wf[f] = (JSON.parse(body).workflow_runs || []).map((x) => ({ s: x.status, c: x.conclusion, t: x.updated_at }));
+      }
+      return r.fulfill(json({ t: m.durumT ?? Date.now(), wf }));
+    }],
     h('raw-tg', /^https:\/\/raw\.githubusercontent\.com\/.*\/veri\/tg\.json/), h('raw-ps', /^https:\/\/raw\.githubusercontent\.com\/.*\/veri-ps\/ps\.json/), h('raw-kurul', /^https:\/\/raw\.githubusercontent\.com\/.*\/veri-kurul\/kurul-ozet\.json/),
     h('rss', /^https:\/\/api\.rss2json\.com/), h('proxy', /allorigins\.win|corsproxy\.io|codetabs\.com|thingproxy\.freeboard\.io|cors\.lol|yacdn\.org/),
     h('jina', /^https:\/\/r\.jina\.ai\/https:\/\/example\.com/), h('meteo', /^https:\/\/api\.open-meteo\.com\/v1\/forecast\?latitude=39\.93&longitude=32\.86&current=temperature_2m$/),

@@ -32,34 +32,30 @@ const syReach=url=>async()=>{const{took}=await syFetch(url,{mode:'no-cors',abort
 const syFresh=(t,okMs,warnMs,extra)=>{const age=Date.now()-t;if(!Number.isFinite(age))return{s:'bad',d:'zaman bilgisi yok'};
   return{s:age<=okMs?'ok':age<=warnMs?'warn':'bad',d:(extra?extra+' · ':'')+syDur(age)+' önce güncellendi'}};
 
-/* GitHub Actions: iş akışı başına son tamamlanan çalışma. 60 istek/saat sınırı için 15 dk önbelleğe alınır. */
+/* GitHub Actions: API'nin IP başına 60 istek/saat sınırı yüzünden doğrudan çağrılmaz; tg iş akışı (5 dk) kimlik doğrulamalı olarak
+   tüm iş akışlarının son çalışmalarını veri dalına durum.json diye yazar, burada o dosya okunur. */
 const syGhMemo={};
-async function syGh(file){
-  const m=syGhMemo[file];if(m&&Date.now()-m.t<15*6e4)return m.p;
-  const key='pano.sys.gh.'+file,c=LS.get(key,null);
+function syGh(file){
+  const m=syGhMemo.p;if(m&&Date.now()-m.t<4*6e4)return m.p;
   const p=(async()=>{
-    if(c&&Date.now()-c.t<15*6e4)return c.j;
-    try{
-      const{r}=await syFetch(SY_GH+file+'/runs?per_page=4',{ms:10000});
-      if(r.status===403||r.status===429){if(c)return{...c.j,stale:true};throw new Error('GitHub API istek sınırı')}
-      if(!r.ok)throw new Error('HTTP '+r.status);
-      const j=await r.json(),runs=(j.workflow_runs||[]).map(x=>({s:x.status,c:x.conclusion,t:Date.parse(x.updated_at||x.created_at),u:x.html_url}));
-      const out={runs};LS.set(key,{t:Date.now(),j:out});return out;
-    }catch(e){if(c)return{...c.j,stale:true};throw e}
+    const{r}=await syFetch(SY_RAW+'veri/durum.json?m='+Math.floor(Date.now()/6e4),{ms:10000});
+    if(!r.ok)throw new Error('durum dosyası okunamadı (HTTP '+r.status+')');
+    const j=await r.json();if(!j||!j.wf)throw new Error('durum dosyası bozuk');return j;
   })();
-  syGhMemo[file]={t:Date.now(),p};p.catch(()=>{if(syGhMemo[file]&&syGhMemo[file].p===p)delete syGhMemo[file]});return p;
+  syGhMemo.p={t:Date.now(),p};p.catch(()=>{if(syGhMemo.p&&syGhMemo.p.p===p)delete syGhMemo.p});return p;
 }
 const syWf=(file,okMs,warnMs)=>async()=>{
-  let j;try{j=await syGh(file)}catch(e){if(/sınırı/.test(e.message))return{s:'warn',d:'GitHub API istek sınırına takıldı, biraz sonra yeniden denenecek'};throw e}
-  const runs=j.runs||[];
+  let j;try{j=await syGh(file)}catch(e){return{s:'warn',d:/^durum/.test(e.message)?e.message:'durum dosyasına ulaşılamadı ('+syErr(e)+')'}}
+  const age0=Date.now()-j.t;if(!(age0<3*36e5))return{s:'warn',d:'durum dosyası '+syDur(age0)+' önce güncellendi (tg çekimi durmuş olabilir)'};
+  const runs=((j.wf||{})[file.replace(/\.yml$/,'')]||[]).map(x=>({s:x.s,c:x.c,t:Date.parse(x.t)}));
   if(!runs.length)return{s:'warn',d:'çalışma kaydı yok'};
   const running=runs[0].s!=='completed',done=runs.filter(r=>r.s==='completed'&&r.c!=='cancelled'&&r.c!=='skipped')[0];
   if(!done)return{s:running?'ok':'warn',d:running?'çalışıyor…':'tamamlanmış çalışma yok'};
-  const age=Date.now()-done.t,tag=(j.stale?' (önbellek)':''),ok=done.c==='success';
+  const age=Date.now()-done.t,tag='',ok=done.c==='success';
   if(!ok)return{s:'bad',d:'son çalışma başarısız ('+(done.c||'?')+') · '+syDur(age)+' önce'+tag};
   if(okMs&&age>warnMs)return{s:'bad',d:'başarılı ama '+syDur(age)+' önce çalıştı, gecikmiş'+tag};
   if(okMs&&age>okMs)return{s:'warn',d:'başarılı · '+syDur(age)+' önce, biraz gecikmiş'+tag};
-  return{s:j.stale?'warn':'ok',d:(running?'yeniden çalışıyor · ':'')+'başarılı · '+syDur(age)+' önce'+tag};
+  return{s:'ok',d:(running?'yeniden çalışıyor · ':'')+'başarılı · '+syDur(age)+' önce'+tag};
 };
 const sySize=()=>{let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);n+=(k.length+(localStorage.getItem(k)||'').length)*2}}catch{}return n};
 
@@ -83,22 +79,22 @@ const SY_DEFS=[
   }},
   {id:'three',g:'Tarayıcı ve site',n:'Arka plan (three.js)',af:'3B arka plan',every:60e3,run:async()=>typeof THREE!=='undefined'?{s:'ok',d:'yüklü'}:{s:'warn',d:'yüklenemedi (CDN), arka plan çizilmez'}},
 
-  {id:'wf-pages',g:'GitHub (altyapı)',n:'Site yayını (Pages)',af:'siteyi yayınlar',fix:'GitHub → Actions → pages çalışmasındaki hataya bak.',every:15*6e4,run:syWf('pages.yml')},
-  {id:'wf-test',g:'GitHub (altyapı)',n:'Otomatik testler',af:'kalite güvencesi',fix:'GitHub → Actions → test çalışmasına bak.',every:15*6e4,run:syWf('test.yml')},
-  {id:'wf-tg',g:'GitHub (altyapı)',n:'Telegram veri çekimi',af:'Telegram sekmesi',fix:'Actions → tg çalışmasına bak.',every:15*6e4,run:syWf('tg.yml',45*6e4,3*36e5)},
-  {id:'wf-ps',g:'GitHub (altyapı)',n:'PlayStation veri çekimi',af:'PlayStation widget\'ı',fix:'Actions → ps çalışmasına bak.',every:15*6e4,run:syWf('ps.yml',9*36e5,15*36e5)},
-  {id:'wf-kurul',g:'GitHub (altyapı)',n:'Dini Sorular veri çekimi',af:'Dini Sorular widget\'ı',fix:'Actions → kurul çalışmasına bak.',every:15*6e4,run:syWf('kurul.yml',28*36e5,50*36e5)},
+  {id:'wf-pages',g:'GitHub (altyapı)',n:'Site yayını (Pages)',af:'siteyi yayınlar',fix:'GitHub → Actions → pages çalışmasındaki hataya bak.',every:10*6e4,run:syWf('pages.yml')},
+  {id:'wf-test',g:'GitHub (altyapı)',n:'Otomatik testler',af:'kalite güvencesi',fix:'GitHub → Actions → test çalışmasına bak.',every:10*6e4,run:syWf('test.yml')},
+  {id:'wf-tg',g:'GitHub (altyapı)',n:'Telegram veri çekimi',af:'Telegram sekmesi',fix:'Actions → tg çalışmasına bak.',every:10*6e4,run:syWf('tg.yml',45*6e4,3*36e5)},
+  {id:'wf-ps',g:'GitHub (altyapı)',n:'PlayStation veri çekimi',af:'PlayStation widget\'ı',fix:'Actions → ps çalışmasına bak.',every:10*6e4,run:syWf('ps.yml',9*36e5,15*36e5)},
+  {id:'wf-kurul',g:'GitHub (altyapı)',n:'Dini Sorular veri çekimi',af:'Dini Sorular widget\'ı',fix:'Actions → kurul çalışmasına bak.',every:10*6e4,run:syWf('kurul.yml',28*36e5,50*36e5)},
 
   {id:'d-tg',g:'Veri dosyaları',n:'Telegram verisi (tg.json)',af:'Telegram sekmesi',fix:'Telegram çekimi durmuş olabilir.',every:10*6e4,run:syJson(SY_RAW+'veri/tg.json?m='+Math.floor(Date.now()/6e4),j=>({...syFresh(j.t,20*6e4,90*6e4,(j.ch||[]).length+' kanal')}))},
   {id:'d-ps',g:'Veri dosyaları',n:'PlayStation verisi (ps.json)',af:'PlayStation widget\'ı',fix:'PlayStation çekimi durmuş olabilir.',every:30*6e4,run:syJson(SY_RAW+'veri-ps/ps.json?m='+Math.floor(Date.now()/6e5),j=>({...syFresh(Date.parse(j.t),9*36e5,15*36e5,(j.deals||[]).length+' indirim')}))},
   {id:'d-kurul',g:'Veri dosyaları',n:'Dini Sorular verisi',af:'Dini Sorular widget\'ı',fix:'Kurul çekimi durmuş olabilir.',every:60*6e4,run:syJson(SY_RAW+'veri-kurul/kurul-ozet.json?h='+Math.floor(Date.now()/36e5),j=>({...syFresh(j.t,28*36e5,50*36e5,(j.n||0)+' karar')}))},
 
   {id:'rss',g:'Haber ve içerik',n:'RSS çevirici (rss2json)',af:'Haberler, Son Dakika',fix:'Haberler yedek yollara düşer; yavaşlayabilir.',every:5*6e4,run:syJson('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.aa.com.tr/tr/rss/default?cat=guncel'),j=>j.status==='ok'&&(j.items||[]).length?{d:(j.items||[]).length+' haber geldi'}:{s:'bad',d:'yanıt boş ('+(j.status||'?')+')'})},
-  {id:'px',g:'Haber ve içerik',n:'CORS vekilleri',af:'Haberler, okuyucu, Steam',fix:'Çalışan vekil kalmazsa yedek yol gerekir.',every:10*6e4,run:async()=>{
+  {id:'px',g:'Haber ve içerik',n:'CORS vekilleri',af:'Haberler, okuyucu, Steam',fix:'Haberler önce rss2json ile gelir; vekiller yedek yoldur. Hiçbiri kalmazsa yedek yol gerekir.',every:10*6e4,run:async()=>{
     const target='https://open.er-api.com/v6/latest/USD',host=u=>{try{return new URL(u).hostname}catch{return '?'}};
     const rs=await Promise.all(PROXIES.map(async p=>{const u=p(target);try{const{r,took}=await syFetch(u,{ms:11000});const t=await r.text();return{h:host(u),ok:r.ok&&t.length>=200,ms:took}}catch(e){return{h:host(u),ok:false}}}));
     const up=rs.filter(x=>x.ok),dn=rs.filter(x=>!x.ok);
-    return{s:!up.length?'bad':dn.length?'warn':'ok',d:up.length+'/'+rs.length+' çalışıyor'+(dn.length?' · yok: '+dn.map(x=>x.h).join(', '):''),ms:up.length?Math.min(...up.map(x=>x.ms)):undefined};
+    return{s:!up.length?'bad':up.length<2?'warn':'ok',d:up.length+'/'+rs.length+' çalışıyor'+(dn.length?' · yok: '+dn.map(x=>x.h).join(', '):''),ms:up.length?Math.min(...up.map(x=>x.ms)):undefined};
   }},
   {id:'jina',g:'Haber ve içerik',n:'r.jina.ai (Telegram yedeği)',af:'Telegram yedek yolu',every:15*6e4,run:async()=>{
     const{r,took}=await syFetch('https://r.jina.ai/https://example.com/',{ms:12000});
@@ -174,8 +170,7 @@ function mountSystem(w,root){
   const res=new Map();   /* id → {s,d,ms,t} */
   const running=new Set();
   let last=0,modal=null;
-  root.innerHTML='<div class="sy-w" data-state="run">'+hd('sys','Sistem','<button class="ibtn" type="button" data-a="re" aria-label="Şimdi kontrol et" title="Şimdi kontrol et">'+I.refresh+'</button>')+
-    '<div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><div class="sy-row"><div class="sy-led" aria-hidden="true"></div><b class="sy-hl"></b></div><span class="sy-sub"></span><div class="sy-bars" aria-hidden="true"></div></div></div>';
+  root.innerHTML='<div class="sy-w" data-state="run"><div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><span class="sy-cap">Sistem durumu</span><div class="sy-row"><i class="sy-led" aria-hidden="true"></i><b class="sy-hl"></b></div><div class="sy-num"></div><div class="sy-bars" aria-hidden="true"></div><span class="sy-sub"></span></div></div>';
   const wrap=$('.sy-w',root),card=$('.sy-card',root);
   const rows=()=>{
     const base=SY_DEFS.map(d=>{const r=res.get(d.id);return{id:d.id,g:d.g,n:d.n,af:d.af,fix:d.fix,s:r?r.s:'off',d:r?r.d:'henüz kontrol edilmedi',ms:r&&r.ms}});
@@ -184,8 +179,9 @@ function mountSystem(w,root){
   const paint=()=>{
     const rs=rows(),sm=sySummary(rs),bad=rs.filter(r=>r.s==='bad'),warn=rs.filter(r=>r.s==='warn'),probs=bad.concat(warn);
     wrap.dataset.state=sm.state;
-    $('.sy-hl',root).textContent=sm.state==='run'?'Kontrol ediliyor':sm.state==='ok'?'Tüm sistemler çalışıyor':bad.length?bad.length+' hizmet çalışmıyor':warn.length+' hizmette uyarı';
-    $('.sy-sub',root).textContent=!sm.known?'ilk sonuçlar geliyor':probs.length?probs[0].n+(probs.length>1?' +'+(probs.length-1):''):sm.c.ok+'/'+sm.known+' kontrol'+(last?' · '+syTime(last).slice(0,5):'')+(running.size?' · yenileniyor':'');
+    $('.sy-hl',root).textContent=sm.state==='run'?'Kontrol ediliyor':sm.state==='ok'?'Çalışıyor':bad.length?'Kesinti var':'Uyarı var';
+    $('.sy-num',root).innerHTML=sm.known?'<b>'+sm.c.ok+'</b><span>/'+sm.known+' hizmet</span>':'';
+    $('.sy-sub',root).textContent=!sm.known?'ilk sonuçlar geliyor':probs.length?probs[0].n+(probs.length>1?' +'+(probs.length-1):''):'son kontrol '+(last?syTime(last).slice(0,5):'—')+(running.size?' · yenileniyor':'');
     card.title=probs.length?probs.map(r=>r.n+': '+r.d).join('\n'):'';
     $('.sy-bars',root).innerHTML=[...new Set(rs.map(r=>r.g))].map(g=>{const gs=sySummary(rs.filter(r=>r.g===g));return'<i data-s="'+(gs.state==='run'?'off':gs.state)+'" title="'+esc(g)+'"></i>'}).join('');
     if(modal&&$('.sy-ov'))modal.paint();
@@ -213,7 +209,6 @@ function mountSystem(w,root){
   addEventListener('online',()=>pass(true));addEventListener('offline',()=>pass(true));
   const open=()=>{if(document.body.classList.contains('editing'))return;modal=sysOpen(rows,recheck)};
   root.addEventListener('click',e=>{
-    if(e.target.closest('[data-a=re]')){pass(true);return}
     if(e.target.closest('.sy-card'))open();
   });
   card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
