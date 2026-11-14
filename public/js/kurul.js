@@ -96,9 +96,11 @@ function krOpen(w,ozet){
 }
 function mountKurul(w,root){
   let data=null,bad=false;
-  root.innerHTML='<div class="kr-w">'+hd('kurul','Dini Sorular','')+
+  let tab=LS.get('pano.rehber.tab','q')==='h'?'h':'q';
+  root.innerHTML='<div class="kr-w">'+hd('kurul','Rehber','<div class="kr-tabs" role="tablist"><button type="button" role="tab" data-t="q">Sorular</button><button type="button" role="tab" data-t="h">Hadis</button></div>')+
     '<div class="kr-card" role="button" tabindex="0" aria-label="Soruyu ve cevabı aç"><div class="kr-cq noscroll"></div><div class="kr-cf"></div></div></div>';
-  const cq=$('.kr-cq',root),card=$('.kr-card',root);
+  const cq=$('.kr-cq',root),card=$('.kr-card',root),cf=$('.kr-cf',root);
+  let hdn=null,hdBad=false;   /* günün hadisi */
   /* Günün sorusu: herkes için aynı. Takvim veride hazırdır (gun: tarih → karar); yoksa tarihten türetilen sabit bir sıra kullanılır. Tarih İstanbul saatine göredir. */
   const istDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul'}).format(Date.now());
   const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
@@ -115,7 +117,13 @@ function mountKurul(w,root){
     while(hi-lo>.4){const m=(lo+hi)/2;cq.style.fontSize=m+'px';if(cq.scrollHeight<=cq.clientHeight+1){best=m;lo=m}else hi=m}
     cq.style.fontSize=best+'px';
   };
+  const paintTabs=()=>{$$('.kr-tabs button',root).forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});card.setAttribute('aria-label',tab==='h'?'Hadisi aç':'Soruyu ve cevabı aç');card.dataset.tab=tab};
   const draw=()=>{
+    paintTabs();cf.textContent='';
+    if(tab==='h'){
+      if(!hdn){cq.innerHTML='<span>'+(hdBad?'Hadis şu an alınamadı. <button type="button" class="kr-rt">Tekrar dene</button>':'Yükleniyor…')+'</span>';delete card.dataset.i;return}
+      cq.innerHTML='<span>'+esc(hdn.t)+'</span>';cf.textContent=hdn.f;card.dataset.i=hdn.i;fit();return;
+    }
     if(!data){
       cq.innerHTML='<span>'+(bad?'Sorular şu an alınamadı. <button type="button" class="kr-rt">Tekrar dene</button>':'Yükleniyor…')+'</span>';return;
     }
@@ -123,7 +131,12 @@ function mountKurul(w,root){
     cq.innerHTML='<span>“'+esc(x.q)+'”</span>';
     card.dataset.u=x.u;fit();
   };
+  async function loadH(){
+    try{hdn=await hdToday();hdBad=false}catch{hdBad=!hdn}
+    draw();
+  }
   async function load(){
+    if(tab==='h'&&!hdn)loadH();
     try{
       const j=await krLoad('kurul-ozet.json');
       data=j;bad=false;LS.set('pano.kurul.c',{t:j.t,gun:j.gun,items:j.items});status('kr',true);
@@ -135,14 +148,19 @@ function mountKurul(w,root){
   }
   const c0=LS.get('pano.kurul.c',null);if(c0&&Array.isArray(c0.items)&&c0.items.length)data={t:c0.t,gun:c0.gun,items:c0.items};
   draw();load();
-  const open=()=>{if(data&&!document.body.classList.contains('editing')){const k=krOpen(w,data);if(k&&card.dataset.u)k.open(card.dataset.u)}};
+  const open=()=>{
+    if(document.body.classList.contains('editing'))return;
+    if(tab==='h'){if(hdn)hdOpen(hdn.i);return}
+    if(data&&!document.body.classList.contains('editing')){const k=krOpen(w,data);if(k&&card.dataset.u)k.open(card.dataset.u)}};
   root.addEventListener('click',e=>{
-    if(e.target.closest('.kr-rt')){load();return}
+    const tb=e.target.closest('.kr-tabs button');
+    if(tb){tab=tb.dataset.t;LS.set('pano.rehber.tab',tab);if(tab==='h'&&!hdn)loadH();draw();return}
+    if(e.target.closest('.kr-rt')){tab==='h'?loadH():load();return}
     if(e.target.closest('.kr-card'))open();
   });
   card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
   new ResizeObserver(()=>requestAnimationFrame(fit)).observe(root);
   let shownDay=istDay();
-  every(w,()=>{const d=istDay();if(d!==shownDay){shownDay=d;draw()}},600e3);   /* gün (İstanbul) değişince yeni soru */
+  every(w,()=>{const d=istDay();if(d!==shownDay){shownDay=d;hdn=null;if(tab==='h')loadH();draw()}},600e3);   /* gün (İstanbul) değişince yeni soru */
   every(w,load,6*3600e3);onBus(w,'refresh',load);
 }

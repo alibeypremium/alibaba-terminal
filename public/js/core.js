@@ -18,7 +18,7 @@ const bus=new EventTarget();
    zamanlayıcılar/dinleyiciler kendiliğinden temizlenir; böylece gizli widget ağ isteği yapmaz. */
 const every=(w,fn,ms)=>{const g=w._gen;const id=setInterval(()=>{if(w._gen!==g){clearInterval(id);return}if(document.hidden&&ms>=60e3)return;fn()},ms);return id};
 const onBus=(w,ev,fn)=>{const g=w._gen;const h=e=>{if(w._gen!==g){bus.removeEventListener(ev,h);return}fn(e)};bus.addEventListener(ev,h)};
-const SRC={};const SRC_NAMES={wx:'Hava',pr:'Namaz',fx:'Döviz',cr:'Kripto',gn:'Son Dakika haberleri',kn:'Teknoloji haberleri',tg:'Telegram',kr:'Dini Sorular'};
+const SRC={};const SRC_NAMES={wx:'Hava',pr:'Namaz',fx:'Döviz',cr:'Kripto',gn:'Son Dakika haberleri',kn:'Teknoloji haberleri',tg:'Telegram',kr:'Rehber'};
 const hms=t=>new Date(t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 let STREAM_LIVE=false;   /* canlı fiyat akışı (WebSocket) bağlı ve taze mi */
 const statusText=()=>{

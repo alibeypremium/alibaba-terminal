@@ -15,7 +15,7 @@ const REG={   /* sıra = varsayılan yerleşim (ızgara soldan sağa, yukarıdan
  radio:{title:'Radyo',def:[1,1],mount:mountRadio},
  tv:{title:'TradingView',def:[2,1],mount:mountTV},
  notes:{title:'Notlarım',def:[3,1],hide:true,mount:mountNotes},
- kurul:{title:'Dini Sorular',def:[3,1],hide:true,mount:mountKurul},
+ kurul:{title:'Rehber',def:[3,1],hide:true,mount:mountKurul},
 };
 const PRESETS={XS:[2,1],S:[2,2],M:[3,2],L:[4,3],XL:[6,4]};
 const grid=$('#grid');

@@ -83,11 +83,12 @@ const SY_DEFS=[
   {id:'wf-test',g:'GitHub (altyapı)',n:'Otomatik testler',af:'kalite güvencesi',fix:'GitHub → Actions → test çalışmasına bak.',every:10*6e4,run:syWf('test.yml')},
   {id:'wf-tg',g:'GitHub (altyapı)',n:'Telegram veri çekimi',af:'Telegram sekmesi',fix:'Actions → tg çalışmasına bak.',every:10*6e4,run:syWf('tg.yml',45*6e4,3*36e5)},
   {id:'wf-ps',g:'GitHub (altyapı)',n:'PlayStation veri çekimi',af:'PlayStation widget\'ı',fix:'Actions → ps çalışmasına bak.',every:10*6e4,run:syWf('ps.yml',9*36e5,15*36e5)},
-  {id:'wf-kurul',g:'GitHub (altyapı)',n:'Dini Sorular veri çekimi',af:'Dini Sorular widget\'ı',fix:'Actions → kurul çalışmasına bak.',every:10*6e4,run:syWf('kurul.yml',28*36e5,50*36e5)},
+  {id:'wf-kurul',g:'GitHub (altyapı)',n:'Rehber · Dini Sorular veri çekimi',af:'Rehber widget\'ı',fix:'Actions → kurul çalışmasına bak.',every:10*6e4,run:syWf('kurul.yml',28*36e5,50*36e5)},
 
   {id:'d-tg',g:'Veri dosyaları',n:'Telegram verisi (tg.json)',af:'Telegram sekmesi',fix:'Telegram çekimi durmuş olabilir.',every:10*6e4,run:syJson(SY_RAW+'veri/tg.json?m='+Math.floor(Date.now()/6e4),j=>({...syFresh(j.t,20*6e4,90*6e4,(j.ch||[]).length+' kanal')}))},
   {id:'d-ps',g:'Veri dosyaları',n:'PlayStation verisi (ps.json)',af:'PlayStation widget\'ı',fix:'PlayStation çekimi durmuş olabilir.',every:30*6e4,run:syJson(SY_RAW+'veri-ps/ps.json?m='+Math.floor(Date.now()/6e5),j=>({...syFresh(Date.parse(j.t),9*36e5,15*36e5,(j.deals||[]).length+' indirim')}))},
-  {id:'d-kurul',g:'Veri dosyaları',n:'Dini Sorular verisi',af:'Dini Sorular widget\'ı',fix:'Kurul çekimi durmuş olabilir.',every:60*6e4,run:syJson(SY_RAW+'veri-kurul/kurul-ozet.json?h='+Math.floor(Date.now()/36e5),j=>({...syFresh(j.t,28*36e5,50*36e5,(j.n||0)+' karar')}))},
+  {id:'d-kurul',g:'Veri dosyaları',n:'Rehber · Dini Sorular verisi',af:'Rehber widget\'ı',fix:'Kurul çekimi durmuş olabilir.',every:60*6e4,run:syJson(SY_RAW+'veri-kurul/kurul-ozet.json?h='+Math.floor(Date.now()/36e5),j=>({...syFresh(j.t,28*36e5,50*36e5,(j.n||0)+' karar')}))},
+  {id:'d-hadis',g:'Veri dosyaları',n:'Rehber · Hadis verisi',af:'Rehber widget\'ı (Hadis)',fix:'Site dosyaları eksik yüklenmiş olabilir; sayfayı yenile.',every:60*6e4,run:syJson('data/hadis/idx.json',j=>j.n>5000?{d:j.n+' hadis'}:{s:'bad',d:'veri eksik'})},
 
   {id:'rss',g:'Haber ve içerik',n:'RSS çevirici (rss2json)',af:'Haberler, Son Dakika',fix:'Haberler yedek yollara düşer; yavaşlayabilir.',every:5*6e4,run:syJson('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.aa.com.tr/tr/rss/default?cat=guncel'),j=>j.status==='ok'&&(j.items||[]).length?{d:(j.items||[]).length+' haber geldi'}:{s:'bad',d:'yanıt boş ('+(j.status||'?')+')'})},
   {id:'px',g:'Haber ve içerik',n:'CORS vekilleri',af:'Haberler, okuyucu, Steam',fix:'Haberler önce rss2json ile gelir; vekiller yedek yoldur. Hiçbiri kalmazsa yedek yol gerekir.',every:10*6e4,run:async()=>{
