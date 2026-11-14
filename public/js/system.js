@@ -170,7 +170,7 @@ function mountSystem(w,root){
   const res=new Map();   /* id → {s,d,ms,t} */
   const running=new Set();
   let last=0,modal=null;
-  root.innerHTML='<div class="sy-w" data-state="run"><div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><span class="sy-cap">Sistem durumu</span><div class="sy-row"><i class="sy-led" aria-hidden="true"></i><b class="sy-hl"></b></div><div class="sy-num"></div><div class="sy-bars" aria-hidden="true"></div><span class="sy-sub"></span></div></div>';
+  root.innerHTML='<div class="sy-w" data-state="run"><div class="sy-card" role="button" tabindex="0" aria-label="Sistem durumu, ayrıntıları aç"><span class="sy-cap">Sistem</span><div class="sy-row"><i class="sy-led" aria-hidden="true"></i><b class="sy-hl"></b></div><div class="sy-num"></div><div class="sy-bars" aria-hidden="true"></div><span class="sy-sub"></span></div></div>';
   const wrap=$('.sy-w',root),card=$('.sy-card',root);
   const rows=()=>{
     const base=SY_DEFS.map(d=>{const r=res.get(d.id);return{id:d.id,g:d.g,n:d.n,af:d.af,fix:d.fix,s:r?r.s:'off',d:r?r.d:'henüz kontrol edilmedi',ms:r&&r.ms}});
