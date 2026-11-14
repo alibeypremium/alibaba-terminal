@@ -8,11 +8,11 @@ const SY_GH='https://api.github.com/repos/alibeypremium/alibaba-terminal/actions
 const SY_LBL={ok:'Çalışıyor',warn:'Dikkat',bad:'Çalışmıyor',off:'Bekliyor'};
 const syDur=ms=>{const m=Math.max(0,Math.round(ms/6e4));return m<90?m+' dk':m<2880?Math.round(m/60)+' sa':Math.round(m/1440)+' gün'};
 const syTime=t=>new Date(t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-async function syFetch(url,{ms=9000,mode,cache,abortAfterHeaders}={}){
+async function syFetch(url,{ms=9000,mode,cache,method,abortAfterHeaders}={}){
   const c=new AbortController(),tm=setTimeout(()=>c.abort(),ms),t0=performance.now();
   try{
     /* cache:'no-store' tarayıcıya Cache-Control başlığı ekletir; bu, CORS vekillerinde ön kontrol (preflight) başarısızlığına yol açar — yalnızca aynı kaynakta kullan */
-    const r=await fetch(url,{signal:c.signal,mode,cache,credentials:'omit'});
+    const r=await fetch(url,{signal:c.signal,mode,cache,method,credentials:'omit'});
     const took=Math.round(performance.now()-t0);
     if(abortAfterHeaders)c.abort();   /* yalnızca yanıtın geldiğini gör, gövdeyi indirme */
     return{r,took};
@@ -117,7 +117,7 @@ const SY_DEFS=[
   {id:'kick',g:'Oyun ve medya',n:'Kick',af:'Kick sekmesi',every:30*6e4,run:syReach('https://kick.com/robots.txt')},
   {id:'tv',g:'Oyun ve medya',n:'TradingView',af:'Grafik / canlı yayın kartları',every:30*6e4,run:syReach('https://s3.tradingview.com/tv.js')},
   {id:'odtu',g:'Oyun ve medya',n:'Radyo ODTÜ yayını',af:'Radyo widget\'ı',fix:'Radyo yedek kanala düşer.',every:10*6e4,run:async()=>{
-    for(const u of ['https://stream3.radyoodtu.com.tr:8000/;','https://stream.radyoodtu.com.tr/;']){try{const{r,took}=await syFetch(u,{mode:'no-cors',abortAfterHeaders:true,ms:8000});return{s:'ok',d:'yayın geliyor',ms:took}}catch{}}
+    for(const u of ['https://stream3.radyoodtu.com.tr:8000/;','https://stream.radyoodtu.com.tr/;']){try{const{r,took}=await syFetch(u,{mode:'no-cors',method:'HEAD',abortAfterHeaders:true,ms:8000});return{s:'ok',d:'yayın geliyor',ms:took}}catch{}}
     return{s:'bad',d:'iki yayın adresi de yanıt vermiyor'};
   }},
   {id:'cdn',g:'Oyun ve medya',n:'Google Fonts',af:'yazı tipleri',every:30*6e4,run:syReach('https://fonts.googleapis.com/css2?family=Inter')},

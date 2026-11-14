@@ -18,6 +18,7 @@ before(async () => {
   spawnSync('ffmpeg', ['-y', '-loglevel', 'quiet', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=90', '-b:a', '64k', f]);
   mp3 = fs.readFileSync(f);
   stall = http.createServer((q, r) => {
+    if (q.method === 'HEAD') { r.writeHead(200, { 'content-type': 'audio/mpeg', 'access-control-allow-origin': '*' }); r.end(); return; }   // Sistem Durumu erişim yoklaması: bağlantı sayılmaz
     const k = ++conns;
     r.writeHead(200, { 'content-type': 'audio/mpeg', 'access-control-allow-origin': '*' });
     let pos = 0;
