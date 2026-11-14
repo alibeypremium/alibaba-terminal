@@ -1,4 +1,8 @@
 'use strict';
+/* Betik hataları (Sistem Durumu widget'ı gösterir): yalnızca bu oturumdaki yakalanmamış hatalar */
+const ERRS=[];
+addEventListener('error',e=>{if(ERRS.length<50)ERRS.push({t:Date.now(),m:String(e.message||'hata').slice(0,140),s:e.filename?String(e.filename).split('/').pop().split('?')[0]+':'+(e.lineno||0):''})});
+addEventListener('unhandledrejection',e=>{if(ERRS.length<50)ERRS.push({t:Date.now(),m:'Söz hatası: '+String((e.reason&&e.reason.message)||e.reason).slice(0,120),s:''})});
 /* AliBaba Terminal · core.js — klasik betik (modül değil): tüm js/*.js dosyaları index.html'deki sırayla yüklenir ve aynı genel kapsamı paylaşır. */
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
