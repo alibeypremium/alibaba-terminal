@@ -114,3 +114,15 @@ test('Hadis penceresi: detayda râvi/bölüm bağlantısı o süzgeci uygular', 
   if (hasR) { await tap(page, '.hd-lk[data-r]'); await page.waitForSelector('.hd-i'); assert.notEqual(await page.$eval('[data-f=r]', (e) => e.value), ''); }
   await ctx.close();
 });
+
+test('Rehber: her 60 saniyede Sorular ↔ Hadis değişir; sekmeye tıklayınca süre yeniden başlar', async () => {
+  const ctx = await newContext(browser, { viewport: { width: 1280, height: 800 } });
+  await ctx.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, ms, ...a) => st(f, ms === 60e3 ? 1500 : ms, ...a); });
+  const { page } = await openH(ctx);
+  const on = () => page.$eval(W + ' .kr-tabs button.on', (b) => b.dataset.t);
+  assert.equal(await on(), 'h');
+  await page.waitForFunction((s) => document.querySelector(s + ' .kr-tabs button.on').dataset.t === 'q', W, { timeout: 5000 });
+  await page.waitForFunction((s) => document.querySelector(s + ' .kr-tabs button.on').dataset.t === 'h', W, { timeout: 5000 });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pano.rehber.tab') || '\"h\"')), 'h');
+  await ctx.close();
+});

@@ -113,7 +113,7 @@ function mountKurul(w,root){
   /* Metin kutuya sığana kadar yazı boyutunu küçült. */
   const fit=()=>{
     if(!cq.firstElementChild)return;
-    let lo=11,hi=24,best=11;
+    let lo=10.5,hi=cq.closest('.kr-card')&&card.dataset.tab==='h'?16.5:17,best=10.5;
     while(hi-lo>.4){const m=(lo+hi)/2;cq.style.fontSize=m+'px';if(cq.scrollHeight<=cq.clientHeight+1){best=m;lo=m}else hi=m}
     cq.style.fontSize=best+'px';
   };
@@ -148,13 +148,20 @@ function mountKurul(w,root){
   }
   const c0=LS.get('pano.kurul.c',null);if(c0&&Array.isArray(c0.items)&&c0.items.length)data={t:c0.t,gun:c0.gun,items:c0.items};
   draw();load();
+  /* Her 60 saniyede Sorular ↔ Hadis (Ayet · Hadis · Esma widget'ındaki gibi). Elle seçimde süre yeniden başlar; seçim kaydedilmez. */
+  let timer=0;const gen=w._gen;
+  const arm=()=>{clearTimeout(timer);timer=setTimeout(()=>{
+    if(w._gen!==gen)return;
+    tab=tab==='q'?'h':'q';if(tab==='h'&&!hdn)loadH();draw();arm();
+  },60e3)};
+  arm();
   const open=()=>{
     if(document.body.classList.contains('editing'))return;
     if(tab==='h'){if(hdn)hdOpen(hdn.i);return}
     if(data&&!document.body.classList.contains('editing')){const k=krOpen(w,data);if(k&&card.dataset.u)k.open(card.dataset.u)}};
   root.addEventListener('click',e=>{
     const tb=e.target.closest('.kr-tabs button');
-    if(tb){tab=tb.dataset.t;LS.set('pano.rehber.tab',tab);if(tab==='h'&&!hdn)loadH();draw();return}
+    if(tb){tab=tb.dataset.t;LS.set('pano.rehber.tab',tab);if(tab==='h'&&!hdn)loadH();draw();arm();return}
     if(e.target.closest('.kr-rt')){tab==='h'?loadH():load();return}
     if(e.target.closest('.kr-card'))open();
   });
