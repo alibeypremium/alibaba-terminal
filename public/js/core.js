@@ -23,7 +23,7 @@ const hms=t=>new Date(t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-di
 let STREAM_LIVE=false;   /* canlı fiyat akışı (WebSocket) bağlı ve taze mi */
 const statusText=()=>{
   const keys=Object.keys(SRC_NAMES),ts=Object.values(SRC).filter(v=>v.ok).map(v=>v.t);
-  return 'İnternet bağlantısı yanıt süresi'+(ts.length?'\nSon veri '+hms(Math.max(...ts)):'')+'\n'+keys.map(k=>SRC_NAMES[k]+': '+(SRC[k]?(SRC[k].ok?hms(SRC[k].t):'bağlanamadı'):'bekliyor')).join('\n');
+  return (typeof sysLine==='function'?sysLine()+'\n\n':'')+'İnternet bağlantısı yanıt süresi'+(ts.length?'\nSon veri '+hms(Math.max(...ts)):'')+'\n'+keys.map(k=>SRC_NAMES[k]+': '+(SRC[k]?(SRC[k].ok?hms(SRC[k].t):'bağlanamadı'):'bekliyor')).join('\n');
 };
 function paintStatus(){const t=document.querySelector('#sbR .sb-tip>div');if(t){const x=statusText();if(t.textContent!==x)t.textContent=x}}
 function status(k,ok){SRC[k]={ok,t:Date.now()};paintStatus()}

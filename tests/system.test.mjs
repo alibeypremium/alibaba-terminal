@@ -7,7 +7,7 @@ let srv, browser;
 before(async () => { srv = await startServer(); browser = await launch(); });
 after(async () => { await browser.close(); await srv.close(); });
 
-const W = '#sbSys';
+const W = '#sbMs';
 const tap = (page, sel) => page.dispatchEvent(sel, 'click');
 const CORS_ = { 'access-control-allow-origin': '*' };
 const run = (minAgo, conclusion = 'success', status = 'completed') => ({ workflow_runs: [{ status, conclusion, updated_at: new Date(Date.now() - minAgo * 60e3).toISOString() }] });
@@ -21,31 +21,33 @@ async function open(over, { ls, three = true, mocks = [] } = {}) {
   await settle(page);
   return { ctx, page, errors };
 }
-const idle = (page) => page.waitForFunction(() => { const e = document.querySelector('#sbSys'); return e && e.dataset.state !== 'run' && !e.dataset.busy; }, null, { timeout: 40000 });
-const settle = (page) => page.waitForFunction(() => { const e = document.querySelector('#sbSys'); return !e.dataset.busy && SY_DEFS.every((d) => SYS.res.has(d.id)); }, null, { timeout: 40000 });
+const idle = (page) => page.waitForFunction(() => { const e = document.querySelector('#sbMs'); return e && e.dataset.state !== 'run' && !e.dataset.busy; }, null, { timeout: 40000 });
+const settle = (page) => page.waitForFunction(() => { const e = document.querySelector('#sbMs'); return !e.dataset.busy && SY_DEFS.every((d) => SYS.res.has(d.id)); }, null, { timeout: 40000 });
 const state = (page) => page.getAttribute(W, 'data-state');
-const tip = (page) => page.getAttribute(W, 'title');
+const tip = (page) => page.textContent('#sbMs .sb-tip>div');
 const rowsOf = (page) => page.evaluate(() => [...document.querySelectorAll('.sy-ov .sy-r')].map((r) => ({ n: r.querySelector('b').textContent, s: r.dataset.s, v: r.querySelector('.sy-v span').textContent, fix: r.querySelector('.sy-fx')?.textContent || '' })));
 const popup = async (page) => { await tap(page, W); await page.waitForSelector('.sy-ov .sy-r'); return rowsOf(page); };
 
-test('Sistem Durumu: üst çubukta, ms çipinin hemen solunda durur; widget olarak yoktur', async () => {
-  const ctx = await newContext(browser, { mocks: sysMocks() });
-  const { page } = await openPage(ctx, srv.url);
-  await page.waitForSelector(W);
-  const pos = await page.evaluate(() => { const a = document.querySelector('#sbSys').getBoundingClientRect(), m = document.querySelector('#sbMs').getBoundingClientRect(); return { right: a.right, msLeft: m.left, ay: a.top + a.height / 2, my: m.top + m.height / 2, next: document.querySelector('#sbSys').nextElementSibling.id }; });
-  assert.equal(pos.next, 'sbMs');
-  assert.ok(pos.right <= pos.msLeft + 0.5 && pos.msLeft - pos.right < 14, 'ms çipinin hemen solunda');
-  assert.ok(Math.abs(pos.ay - pos.my) < 3, 'aynı hizada');
+test('Sistem Durumu: ms çipiyle birleşik; şimşek duruma göre renklenir, çip tıklanınca pencere açılır, sayı yazmaz', async () => {
+  const { ctx, page } = await open({});
+  assert.equal(await page.locator('#sbSys').count(), 0, 'ayrı çip yok');
   assert.equal(await page.locator('.w[data-id=sys]').count(), 0);
+  assert.doesNotMatch(await page.textContent(W), /\d+\/\d+/);
+  const col = () => page.$eval('#sbMs .sb-bolt', (e) => getComputedStyle(e).color);
+  assert.equal(await state(page), 'ok');
+  await page.waitForTimeout(450);   // renk geçişi (0,3 sn)
+  assert.equal(await col(), 'rgb(48, 209, 88)');
+  await tap(page, W);
+  await page.waitForSelector('.sy-ov');
+  await page.keyboard.press('Escape');
   await ctx.close();
 });
 
 test('Sistem Durumu: her şey sağlıklıyken "Tüm sistemler çalışıyor", sorun yok', async () => {
   const { ctx, page, errors } = await open({});
   assert.equal(await state(page), 'ok');
-  assert.match(await tip(page), /^Sistem: Çalışıyor · \d+\/\d+ hizmet\nAyrıntı için tıkla$/);
-  assert.match(await page.textContent(W), /^\d+\/\d+$/);
-  const rows = await popup(page);
+  assert.match(await tip(page), /^Sistem: Çalışıyor\nAyrıntı için tıkla\n/);
+    const rows = await popup(page);
   assert.ok(rows.length >= 30, 'çok sayıda kontrol: ' + rows.length);
   assert.ok(rows.every((r) => r.s === 'ok' || r.s === 'off'), JSON.stringify(rows.filter((r) => r.s !== 'ok' && r.s !== 'off')));
   const gr = await page.$$eval('.sy-ov .sy-g h4', (a) => a.map((h) => h.childNodes[1].textContent));
@@ -66,8 +68,8 @@ test('Sistem Durumu: çalışmayan hizmet kartta adıyla görünür; ayrıntıda
   const tp = await tip(page);
   assert.match(tp, /^Sistem: Kesinti var/);
   assert.equal(tp.split('\n').filter((l) => l.startsWith('• ')).length, 4);
-  assert.match(tp, /• Telegram veri çekimi: son çalışma başarısız/);
-  assert.match(tp, /• RSS çevirici \(rss2json\): HTTP 500/);
+  assert.match(tp, /• Telegram veri çekimi/);
+  assert.match(tp, /• RSS çevirici \(rss2json\)/);
   const rows = await popup(page), by = (n) => rows.find((r) => r.n === n);
   assert.equal(by('Telegram veri çekimi').s, 'bad');
   assert.match(by('Telegram veri çekimi').v, /son çalışma başarısız \(failure\)/);
@@ -145,7 +147,7 @@ test('Sistem Durumu: çevrimdışıyken internet kırmızı, diğerleri denenmez
   const { ctx, page } = await open({});
   await ctx.setOffline(true);
   await page.evaluate(() => window.dispatchEvent(new Event('offline')));
-  await page.waitForFunction(() => document.querySelector('#sbSys').dataset.state === 'bad', null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector('#sbMs').dataset.state === 'bad', null, { timeout: 30000 });
   let rows = await popup(page);
   assert.equal(rows.find((r) => r.n === 'İnternet bağlantısı').s, 'bad');
   for (let i = 0; i < 40 && !/çevrimdışı/.test(rows.find((r) => r.n === 'Hava durumu (Open-Meteo)').v); i++) { await page.waitForTimeout(250); rows = await rowsOf(page); }   /* uçuştaki istekler bitince yeniden denenir */
@@ -158,7 +160,7 @@ test('Sistem Durumu: betik hatası yakalanır ve gösterilir', async () => {
   await page.evaluate(() => { setTimeout(() => { throw new Error('deneme hatası'); }); });
   await page.waitForFunction(() => ERRS.length === 1);
   await page.evaluate(() => bus.dispatchEvent(new Event('refresh')));
-  await page.waitForFunction(() => document.querySelector('#sbSys').dataset.state === 'bad', null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector('#sbMs').dataset.state === 'bad', null, { timeout: 30000 });
   const rows = await popup(page), r = rows.find((x) => x.n === 'Betik hataları (bu oturum)');
   assert.equal(r.s, 'bad');
   assert.match(r.v, /1 hata · son: Uncaught Error: deneme hatası/);
@@ -181,9 +183,9 @@ test('Sistem Durumu: yeni sürüm yayındaysa uyarır, aynıysa güncel der', as
 test('Sistem Durumu: widget\'ların kendi canlı durumu (başarısız çekim) listelenir; sistem önbelleği yedeğe girmez', async () => {
   const ctx = await newContext(browser, { mocks: sysMocks() });
   const { page } = await openPage(ctx, srv.url);
-  await page.waitForFunction(() => typeof status === 'function' && !!document.querySelector('#sbSys'));
+  await page.waitForFunction(() => typeof status === 'function' && !!document.querySelector('#sbMs'));
   await page.evaluate(() => { status('wx', true); status('fx', false); });
-  await page.waitForFunction(() => document.querySelector('#sbSys').dataset.state === 'bad', null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector('#sbMs').dataset.state === 'bad', null, { timeout: 30000 });
   const rows = await popup(page);
   assert.equal(rows.find((r) => r.n === 'Hava').s, 'ok');
   assert.equal(rows.find((r) => r.n === 'Döviz').s, 'bad');

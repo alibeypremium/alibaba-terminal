@@ -38,10 +38,9 @@ function paintRight(){
   /* Hava çipi ve ms çipi ayrı, kalıcı öğelerdir: ms çipi yeniden oluşturulmaz, açılan kutu ekranda kalır. */
   const box=$('#sbR');
   let wxBox=$('#sbWxBox',box),ms=$('#sbMs',box);
-  if(!wxBox){box.innerHTML='<span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-sys" id="sbSys" role="button" tabindex="0" data-state="run"><i class="sb-sd" aria-hidden="true"></i><b>…</b></span><span class="sb-chip sb-ms" id="sbMs" tabindex="0" aria-describedby="sbTip">'+BOLT.replace('%C%','')+'<b></b><span class="sb-v">ms</span><span class="sb-tip" id="sbTip" role="tooltip"><div></div></span></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
+  if(!wxBox){box.innerHTML='<span id="sbWxBox" style="display:contents"></span><span class="sb-chip sb-ms" id="sbMs" role="button" tabindex="0" data-state="run" aria-describedby="sbTip" aria-label="Sistem durumu ve yanıt süresi. Ayrıntıları aç">'+BOLT.replace('%C%','')+'<b></b><span class="sb-v">ms</span><span class="sb-tip" id="sbTip" role="tooltip"><div></div></span></span>';wxBox=$('#sbWxBox',box);ms=$('#sbMs',box)}
   if(r!==lastRight){lastRight=r;wxBox.innerHTML=r}
   const m=TK.ms?TK.ms.ms:undefined,ok=typeof m==='number',c=!ok?(m===null?' err':''):m<200?'':m<500?' warn':' err';
-  $('.sb-bolt',ms).setAttribute('class','sb-bolt'+c);
   const bv=$('b',ms),vt=ok?String(m):'—';if(bv.textContent!==vt)bv.textContent=vt;
   ms.classList.toggle('off',!STREAM_LIVE);
   if(typeof sysPaint==='function')sysPaint();
