@@ -315,7 +315,6 @@ html[data-lite="1"] .rd-disc,html[data-lite="1"] .rd-badge i{animation:none}
 .sb-rd[data-state=play] .rd-eq i:nth-child(2){animation-duration:.55s}.sb-rd[data-state=play] .rd-eq i:nth-child(3){animation-duration:.95s}.sb-rd[data-state=play] .rd-eq i:nth-child(4){animation-duration:.7s}.sb-rd[data-state=play] .rd-eq i:nth-child(5){animation-duration:.62s}
 .sb-rd[data-state=load] .rd-eq i{background:#ffb020;animation:rdeq 1.2s ease-in-out infinite alternate}
 .sb-rd[data-state=err] .rd-eq i,.sb-rd[data-state=na] .rd-eq i{background:#ff453a;opacity:1}
-html[data-lite="1"] .sb-rd .rd-eq i{animation:none!important}
 @media (prefers-reduced-motion:reduce){.sb-rd .rd-eq i,.rp-eq i{animation:none!important}}
 @media (max-width:520px){.sb-rdn{display:none}.sb-rd{padding:3px 10px}}
 /* Radyo paneli */
@@ -331,7 +330,6 @@ html[data-lite="1"] .sb-rd .rd-eq i{animation:none!important}
 .rp-eq i{background:var(--acc);height:22%;animation:none;opacity:.55}
 .rp-pop.live .rp-eq i{opacity:1;animation:rdeq .8s ease-in-out infinite alternate}
 .rp-pop.live .rp-eq i:nth-child(2){animation-duration:.55s}.rp-pop.live .rp-eq i:nth-child(3){animation-duration:.95s}.rp-pop.live .rp-eq i:nth-child(4){animation-duration:.7s}.rp-pop.live .rp-eq i:nth-child(5){animation-duration:.62s}
-html[data-lite="1"] .rp-eq i{animation:none!important}
 .rp-tr{display:flex;align-items:center;justify-content:center;gap:16px}
 .rp-sk,.rp-pl{appearance:none;border:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0;transition:transform .15s}
 .rp-sk{width:36px;height:36px;background:rgba(127,127,140,.2);color:var(--fg)}.rp-sk svg{width:15px;height:15px}
@@ -346,3 +344,10 @@ html[data-lite="1"] .rp-eq i{animation:none!important}
 .rp-it{appearance:none;border:0;background:rgba(127,127,140,.16);color:var(--fg);font:inherit;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;cursor:pointer}
 .rp-it.on{background:var(--acc);color:#fff}
 .rp-it .rd-dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.5)}
+/* Sade modda her animasyon durur; ama çalan radyonun ekolayzırı (üst çubuk çipi ve panel) oynamaya devam eder */
+html[data-lite="1"] body .sb-rd[data-state=play] .rd-eq i,html[data-lite="1"] body .rp-pop.live .rp-eq i{animation:rdeq .8s ease-in-out infinite alternate!important}
+html[data-lite="1"] body .sb-rd[data-state=play] .rd-eq i:nth-child(2),html[data-lite="1"] body .rp-pop.live .rp-eq i:nth-child(2){animation-duration:.55s!important}
+html[data-lite="1"] body .sb-rd[data-state=play] .rd-eq i:nth-child(3),html[data-lite="1"] body .rp-pop.live .rp-eq i:nth-child(3){animation-duration:.95s!important}
+html[data-lite="1"] body .sb-rd[data-state=play] .rd-eq i:nth-child(4),html[data-lite="1"] body .rp-pop.live .rp-eq i:nth-child(4){animation-duration:.7s!important}
+html[data-lite="1"] body .sb-rd[data-state=play] .rd-eq i:nth-child(5),html[data-lite="1"] body .rp-pop.live .rp-eq i:nth-child(5){animation-duration:.62s!important}
+@media (prefers-reduced-motion:reduce){html[data-lite="1"] body .sb-rd .rd-eq i,html[data-lite="1"] body .rp-pop .rp-eq i{animation:none!important}}

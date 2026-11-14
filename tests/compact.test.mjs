@@ -171,6 +171,29 @@ test('Üst çubuk Radyo çipi: hava çipinin soluna, play düğmesi yok; tıklay
   await ctx.close();
 });
 
+test('Sade modda da çalan radyonun ekolayzırı oynar (üst çubuk çipi ve panel); diğer animasyonlar durur', async () => {
+  const ctx = await newContext(browser, { mocks: WXM });
+  await ctx.addInitScript(FAKE);
+  const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1, 'pano.lite': true }, layout: LAYOUT });
+  await page.waitForSelector('#sbRd');
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.lite), '1', 'sade mod açık');
+  const an = (sel) => page.$eval(sel, (e) => getComputedStyle(e).animationName);
+  assert.equal(await an('#sbRd .rd-eq i'), 'none', 'çalmıyorken durur');
+  await tap(page, '#sbRd');
+  await page.waitForSelector('#radioPop:not([hidden])');
+  await tap(page, '#radioPop .rp-it[data-k=ht]');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'play');
+  assert.equal(await an('#sbRd .rd-eq i'), 'rdeq');
+  assert.equal(await an('#sbRd .rd-eq i:nth-child(3)'), 'rdeq');
+  assert.equal(await an('#radioPop .rp-eq i'), 'rdeq');
+  assert.equal(await page.$eval('#sbRd .rd-eq i:nth-child(3)', (e) => getComputedStyle(e).animationDuration), '0.95s');
+  assert.equal(await an('.w[data-id=radio] .rd-eq i'), 'none', 'sade modda widget animasyonu durur (yalnızca üst çubuk oynar)');
+  await tap(page, '#radioPop .rp-pl');
+  await page.waitForFunction(() => document.querySelector('#sbRd').dataset.state === 'idle');
+  assert.equal(await an('#sbRd .rd-eq i'), 'none', 'durunca ekolayzır durur');
+  await ctx.close();
+});
+
 test('Radyo ve Hava panelleri birbirini kapatır', async () => {
   const ctx = await newContext(browser, { mocks: WXM });
   const { page } = await openPage(ctx, srv.url, { ls: { 'pano.rw.size': 1 }, layout: LAYOUT });
