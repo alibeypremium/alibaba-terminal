@@ -1,0 +1,110 @@
+{
+  "t": 1794664242000,
+  "wf": {
+    "pages": [
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:47:32Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:44:29Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:21:49Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:16:27Z"
+      }
+    ],
+    "test": [
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:47:59Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:45:27Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:22:59Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:16:58Z"
+      }
+    ],
+    "tg": [
+      {
+        "c": null,
+        "s": "in_progress",
+        "t": "2026-11-14T13:50:31Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:45:45Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:40:48Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T13:35:38Z"
+      }
+    ],
+    "ps": [
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T07:16:06Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T06:31:11Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-13T19:46:50Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-13T06:51:49Z"
+      }
+    ],
+    "kurul": [
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-14T10:53:45Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-13T14:20:08Z"
+      },
+      {
+        "c": "success",
+        "s": "completed",
+        "t": "2026-11-13T11:37:10Z"
+      }
+    ]
+  }
+}
